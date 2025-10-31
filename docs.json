@@ -1,68 +1,74 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
-  "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+  "name": "Digitzs API Documentation",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
   },
   "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0EA5E9",
+    "light": "#38BDF8",
+    "dark": "#0284C7"
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
+              "authentication",
               "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "error-codes"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/overview"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Authorization",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/authorization/overview",
+              "api-reference/authorization/create-key",
+              "api-reference/authorization/create-token"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api-reference/payments/overview",
+              "api-reference/payments/create-ach-payment",
+              "api-reference/payments/create-token-payment",
+              "api-reference/payments/create-split-payment",
+              "api-reference/payments/create-second-split",
+              "api-reference/payments/refund-void",
+              "api-reference/payments/refund-split",
+              "api-reference/payments/get-by-id",
+              "api-reference/payments/get-status",
+              "api-reference/payments/list"
+            ]
+          },
+          {
+            "group": "Merchants",
+            "pages": [
+              "api-reference/merchants/overview",
+              "api-reference/merchants/create",
+              "api-reference/merchants/get-by-id",
+              "api-reference/merchants/list",
+              "api-reference/merchants/update-bank-info",
+              "api-reference/merchants/update-avs-mode"
             ]
           }
         ]
@@ -71,52 +77,54 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
+          "anchor": "API User Manual",
+          "href": "https://digitzs.com/wp-content/uploads/2019/04/API-User-Manual.pdf",
           "icon": "book-open-cover"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Quick Start Guide",
+          "href": "https://digitzs.com/wp-content/uploads/2019/07/Digitzs-Quick-Start-Guide.pdf",
+          "icon": "file-pdf"
+        },
+        {
+          "anchor": "Support",
+          "href": "mailto:support@digitzs.com",
+          "icon": "headset"
         }
       ]
     }
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Contact Support",
+        "href": "mailto:support@digitzs.com"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "website": "https://digitzs.com"
     }
-  }
+  },
+  "openapi": [],
+  "api": {
+    "baseUrl": "https://api.digitzs.com",
+    "auth": {
+      "method": "bearer"
+    }
+  },
+  "mermaid": true
 }

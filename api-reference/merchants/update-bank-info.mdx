@@ -1,0 +1,299 @@
+---
+title: "Update Merchant Bank Info"
+api: "PUT /merchants/{id}/bankInfo"
+description: "Update the bank account information for a merchant"
+---
+
+## Endpoint
+
+```
+PUT https://api.digitzs.com/merchants/{id}
+```
+
+## Overview
+
+Use this endpoint to update a merchant's bank account information used for receiving payment deposits.
+
+<Warning>
+  Changing bank information affects where funds are deposited. Verify all details carefully before submitting.
+</Warning>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The merchant account ID
+</ParamField>
+
+## Request Body
+
+<ParamField body="data.type" type="string" required>
+  Must be `"merchants"`
+</ParamField>
+
+<ParamField body="data.attributes.group" type="string" required>
+  Must be `"bankInfo"`
+</ParamField>
+
+<ParamField body="data.attributes.bankInfo" type="object" required>
+  New bank account information
+
+  <Expandable title="Bank info properties">
+    <ParamField body="bankName" type="string" required>
+      Name of financial institution
+    </ParamField>
+
+    <ParamField body="accountOwnership" type="string" required>
+      `"personal"` or `"business"`
+    </ParamField>
+
+    <ParamField body="accountType" type="string" required>
+      `"checking"` or `"savings"`
+    </ParamField>
+
+    <ParamField body="accountName" type="string" required>
+      Account holder name
+    </ParamField>
+
+    <ParamField body="accountNumber" type="string" required>
+      Bank account number
+    </ParamField>
+
+    <ParamField body="routingNumber" type="string" required>
+      9-digit routing number
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "merchants",
+    "attributes": {
+      "group": "bankInfo",
+      "bankInfo": {
+        "bankName": "Chase Bank",
+        "accountOwnership": "business",
+        "accountType": "checking",
+        "accountName": "Acme Corporation",
+        "accountNumber": "9876543210",
+        "routingNumber": "026009593"
+      }
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/merchants/merchant_abc123"
+  },
+  "data": {
+    "type": "merchants",
+    "id": "merchant_abc123",
+    "attributes": {
+      "bankInfo": {
+        "bankName": "Chase Bank",
+        "accountType": "checking",
+        "last4": "3210",
+        "updatedAt": "2024-01-20T15:30:00Z"
+      }
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X PUT https://api.digitzs.com/merchants/merchant_abc123 \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "merchants",
+      "attributes": {
+        "group": "bankInfo",
+        "bankInfo": {
+          "bankName": "Chase Bank",
+          "accountOwnership": "business",
+          "accountType": "checking",
+          "accountName": "Acme Corporation",
+          "accountNumber": "9876543210",
+          "routingNumber": "026009593"
+        }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function updateMerchantBankInfo(merchantId, bankInfo) {
+  const response = await axios.put(
+    `https://api.digitzs.com/merchants/${merchantId}`,
+    {
+      data: {
+        type: 'merchants',
+        attributes: {
+          group: 'bankInfo',
+          bankInfo: bankInfo
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  console.log('Bank info updated successfully');
+  return response.data;
+}
+```
+
+```python Python
+import requests
+
+def update_merchant_bank_info(merchant_id, bank_info):
+    url = f"https://api.digitzs.com/merchants/{merchant_id}"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "merchants",
+            "attributes": {
+                "group": "bankInfo",
+                "bankInfo": bank_info
+            }
+        }
+    }
+
+    response = requests.put(url, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()
+```
+
+```php PHP
+<?php
+function updateMerchantBankInfo($merchantId, $bankInfo) {
+    $url = "https://api.digitzs.com/merchants/" . $merchantId;
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "merchants",
+            "attributes" => [
+                "group" => "bankInfo",
+                "bankInfo" => $bankInfo
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    return json_decode(curl_exec($ch), true);
+}
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+def update_merchant_bank_info(merchant_id, bank_info)
+  uri = URI("https://api.digitzs.com/merchants/#{merchant_id}")
+  request = Net::HTTP::Put.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'merchants',
+      attributes: {
+        group: 'bankInfo',
+        bankInfo: bank_info
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  JSON.parse(response.body)
+end
+```
+
+</CodeGroup>
+
+## Important Notes
+
+<Warning>
+  **Verification Required:** New bank accounts may require verification before funds can be deposited. Check with Digitzs support for verification procedures.
+</Warning>
+
+<Note>
+  **Pending Deposits:** Existing pending deposits will complete to the old account. Only new deposits use the updated account.
+</Note>
+
+<Tip>
+  **Double Check:** Verify routing and account numbers carefully. Incorrect information will cause deposit failures.
+</Tip>
+
+## Best Practices
+
+1. **Validate Before Update:** Verify bank details with merchant before submission
+2. **Notify Merchant:** Inform merchant of bank account changes
+3. **Audit Trail:** Log all bank account updates for compliance
+4. **Test Deposits:** Consider micro-deposit verification for added security
+
+## Next Steps
+
+<Card
+  title="Get Merchant Details"
+  icon="building"
+  href="/api-reference/merchants/get-by-id"
+>
+  Verify updated bank information
+</Card>

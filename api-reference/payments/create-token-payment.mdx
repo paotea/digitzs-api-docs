@@ -1,0 +1,698 @@
+---
+title: "Create Token Payment"
+api: "POST /payments"
+description: "Process a payment using a tokenized payment method from the embedded checkout"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/payments
+```
+
+## Overview
+
+Use this endpoint to process payments using TokenEx tokens generated from the Digitzs embedded checkout. This secure method keeps sensitive payment data out of your application while maintaining PCI compliance.
+
+<Note>
+  A TokenEx token must be generated through the Digitzs embedded checkout before using this endpoint. Contact Digitzs support to integrate the embedded checkout into your application.
+</Note>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key from onboarding | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data" type="object" required>
+  Container for API data
+</ParamField>
+
+<ParamField body="data.requestId" type="string">
+  UUID for idempotency. If provided, must be in valid UUID format. Recommended for preventing duplicate transactions.
+</ParamField>
+
+<ParamField body="data.type" type="string" required>
+  Must be `"payments"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Container for payment attributes
+</ParamField>
+
+<ParamField body="data.attributes.paymentType" type="string" required>
+  Must be `"tokenv3"` for tokenized payments
+</ParamField>
+
+<ParamField body="data.attributes.merchantId" type="string" required>
+  The merchant account identifier
+</ParamField>
+
+<ParamField body="data.attributes.miscData" type="string">
+  Optional JSON string containing additional metadata like email, IP addresses, or custom data
+</ParamField>
+
+<ParamField body="data.attributes.token" type="object" required>
+  Tokenized payment method information
+
+  <Expandable title="Token object properties">
+    <ParamField body="data.attributes.token.tokenId" type="string" required>
+      The TokenEx token ID retrieved from the embedded checkout
+    </ParamField>
+
+    <ParamField body="data.attributes.token.holder" type="string" required>
+      Cardholder's name as it appears on the card
+    </ParamField>
+
+    <ParamField body="data.attributes.token.expiry" type="string" required>
+      Card expiration date in MMYY format (e.g., "0229" for February 2029)
+    </ParamField>
+
+    <ParamField body="data.attributes.token.useAVS" type="boolean" required>
+      Whether to require AVS (Address Verification System) match. Set to `true` to require ZIP code match or better for payment capture.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.transaction" type="object" required>
+  Transaction details
+
+  <Expandable title="Transaction object properties">
+    <ParamField body="data.attributes.transaction.amount" type="string" required>
+      Payment amount in cents (e.g., "500" for $5.00)
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.currency" type="string" required>
+      Three-letter currency code (ISO 4217). Currently only `"USD"` is supported.
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.invoice" type="string" required>
+      Invoice or reference number for the transaction
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.billingAddress" type="object" required>
+  Billing address information
+
+  <Expandable title="Billing address properties">
+    <ParamField body="data.attributes.billingAddress.line1" type="string">
+      Primary street address. Optional but recommended for AVS verification.
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.line2" type="string">
+      Secondary address line (apartment, suite, etc.). Optional.
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.city" type="string">
+      City. Optional but recommended.
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.state" type="string">
+      State or province code (e.g., "CA"). Optional but recommended.
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.zip" type="string">
+      ZIP or postal code. Optional but recommended, especially when useAVS is true.
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.country" type="string" required>
+      Country code (e.g., "USA")
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "requestId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "type": "payments",
+    "attributes": {
+      "paymentType": "tokenv3",
+      "merchantId": "merchant_123456",
+      "miscData": "{\"email\":\"customer@example.com\",\"originIp\":\"192.168.1.1\",\"customerIp\":\"203.0.113.0\"}",
+      "token": {
+        "tokenId": "tok_abc123xyz789",
+        "holder": "John Doe",
+        "expiry": "0229",
+        "useAVS": true
+      },
+      "transaction": {
+        "amount": "2500",
+        "currency": "USD",
+        "invoice": "INV-2024-001"
+      },
+      "billingAddress": {
+        "line1": "123 Main Street",
+        "line2": "Suite 100",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94102",
+        "country": "USA"
+      }
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+<ResponseField name="links" type="object">
+  Contains URLs related to the resource
+
+  <Expandable title="properties">
+    <ResponseField name="links.self" type="string">
+      URL of the current endpoint
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Container for response data
+
+  <Expandable title="properties">
+    <ResponseField name="data.type" type="string">
+      Resource type - will be `"payments"`
+    </ResponseField>
+
+    <ResponseField name="data.id" type="string">
+      Unique payment transaction identifier
+    </ResponseField>
+
+    <ResponseField name="data.attributes" type="object">
+      <Expandable title="properties">
+        <ResponseField name="data.attributes.paymentType" type="string">
+          Payment type - `"card"`
+        </ResponseField>
+
+        <ResponseField name="data.attributes.transaction" type="object">
+          <Expandable title="Transaction details">
+            <ResponseField name="data.attributes.transaction.code" type="string">
+              Response code - `"0"` indicates success
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.message" type="string">
+              Human-readable response message
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.amount" type="string">
+              Transaction amount in cents
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.currency" type="string">
+              Currency code
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.invoice" type="string">
+              Invoice reference number
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.authCode" type="string">
+              Authorization code from the payment processor
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.avsResult" type="string">
+              AVS verification result code
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.gross" type="string">
+              Gross transaction amount in cents
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.net" type="string">
+              Net amount after fees in cents
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.grossMinusNet" type="string">
+              Total fees charged in cents
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.fee" type="string">
+              Fixed fee component in cents
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.rate" type="string">
+              Percentage rate applied to the transaction
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_card_abc123xyz",
+    "attributes": {
+      "paymentType": "card",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "2500",
+        "invoice": "INV-2024-001",
+        "currency": "USD",
+        "authCode": "A11111",
+        "avsResult": "Y",
+        "gross": "2500",
+        "net": "2399",
+        "grossMinusNet": "101",
+        "fee": "30",
+        "rate": "2.90"
+      }
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/payments \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "payments",
+      "attributes": {
+        "paymentType": "tokenv3",
+        "merchantId": "merchant_123456",
+        "token": {
+          "tokenId": "tok_abc123xyz789",
+          "holder": "John Doe",
+          "expiry": "0229",
+          "useAVS": true
+        },
+        "transaction": {
+          "amount": "2500",
+          "currency": "USD",
+          "invoice": "INV-2024-001"
+        },
+        "billingAddress": {
+          "line1": "123 Main Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94102",
+          "country": "USA"
+        }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function createTokenPayment(tokenId) {
+  const response = await axios.post(
+    'https://api.digitzs.com/payments',
+    {
+      data: {
+        type: 'payments',
+        attributes: {
+          paymentType: 'tokenv3',
+          merchantId: 'merchant_123456',
+          token: {
+            tokenId: tokenId,
+            holder: 'John Doe',
+            expiry: '0229',
+            useAVS: true
+          },
+          transaction: {
+            amount: '2500',
+            currency: 'USD',
+            invoice: 'INV-2024-001'
+          },
+          billingAddress: {
+            line1: '123 Main Street',
+            city: 'San Francisco',
+            state: 'CA',
+            zip: '94102',
+            country: 'USA'
+          }
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  console.log('Payment ID:', response.data.data.id);
+  console.log('Auth Code:', response.data.data.attributes.transaction.authCode);
+  return response.data;
+}
+
+// Use with token from embedded checkout
+createTokenPayment('tok_abc123xyz789');
+```
+
+```python Python
+import requests
+
+def create_token_payment(token_id):
+    url = "https://api.digitzs.com/payments"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "payments",
+            "attributes": {
+                "paymentType": "tokenv3",
+                "merchantId": "merchant_123456",
+                "token": {
+                    "tokenId": token_id,
+                    "holder": "John Doe",
+                    "expiry": "0229",
+                    "useAVS": True
+                },
+                "transaction": {
+                    "amount": "2500",
+                    "currency": "USD",
+                    "invoice": "INV-2024-001"
+                },
+                "billingAddress": {
+                    "line1": "123 Main Street",
+                    "city": "San Francisco",
+                    "state": "CA",
+                    "zip": "94102",
+                    "country": "USA"
+                }
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    payment_id = response.json()["data"]["id"]
+    auth_code = response.json()["data"]["attributes"]["transaction"]["authCode"]
+    print(f"Payment ID: {payment_id}")
+    print(f"Auth Code: {auth_code}")
+    return response.json()
+
+# Use with token from embedded checkout
+create_token_payment("tok_abc123xyz789")
+```
+
+```php PHP
+<?php
+
+function createTokenPayment($tokenId) {
+    $url = "https://api.digitzs.com/payments";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "payments",
+            "attributes" => [
+                "paymentType" => "tokenv3",
+                "merchantId" => "merchant_123456",
+                "token" => [
+                    "tokenId" => $tokenId,
+                    "holder" => "John Doe",
+                    "expiry" => "0229",
+                    "useAVS" => true
+                ],
+                "transaction" => [
+                    "amount" => "2500",
+                    "currency" => "USD",
+                    "invoice" => "INV-2024-001"
+                ],
+                "billingAddress" => [
+                    "line1" => "123 Main Street",
+                    "city" => "San Francisco",
+                    "state" => "CA",
+                    "zip" => "94102",
+                    "country" => "USA"
+                ]
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        $paymentId = $data["data"]["id"];
+        $authCode = $data["data"]["attributes"]["transaction"]["authCode"];
+        echo "Payment ID: " . $paymentId . "\n";
+        echo "Auth Code: " . $authCode . "\n";
+        return $data;
+    } else {
+        throw new Exception("Error creating payment: " . $response);
+    }
+}
+
+// Use with token from embedded checkout
+createTokenPayment("tok_abc123xyz789");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_token_payment(token_id)
+  uri = URI('https://api.digitzs.com/payments')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'payments',
+      attributes: {
+        paymentType: 'tokenv3',
+        merchantId: 'merchant_123456',
+        token: {
+          tokenId: token_id,
+          holder: 'John Doe',
+          expiry: '0229',
+          useAVS: true
+        },
+        transaction: {
+          amount: '2500',
+          currency: 'USD',
+          invoice: 'INV-2024-001'
+        },
+        billingAddress: {
+          line1: '123 Main Street',
+          city: 'San Francisco',
+          state: 'CA',
+          zip: '94102',
+          country: 'USA'
+        }
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    payment_id = data['data']['id']
+    auth_code = data['data']['attributes']['transaction']['authCode']
+    puts "Payment ID: #{payment_id}"
+    puts "Auth Code: #{auth_code}"
+    data
+  else
+    raise "Error creating payment: #{response.body}"
+  end
+end
+
+# Use with token from embedded checkout
+create_token_payment('tok_abc123xyz789')
+```
+
+</CodeGroup>
+
+## AVS Result Codes
+
+The `avsResult` field contains Address Verification System codes:
+
+| Code | Description |
+|------|-------------|
+| Y | Street address and ZIP code match |
+| A | Street address matches, ZIP code does not |
+| Z | ZIP code matches, street address does not |
+| N | Neither street address nor ZIP code match |
+| U | Address information unavailable |
+| R | Retry - System unavailable |
+| S | Service not supported |
+| T | AVS not supported for this card type |
+
+## Error Responses
+
+<ResponseExample>
+
+```json 400 Bad Request
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "Invalid token format",
+      "source": {
+        "pointer": "/data/attributes/token/tokenId"
+      }
+    }
+  ]
+}
+```
+
+```json 402 Payment Required
+{
+  "errors": [
+    {
+      "status": "402",
+      "title": "Payment Failed",
+      "detail": "Card declined - insufficient funds"
+    }
+  ]
+}
+```
+
+```json 422 Unprocessable Entity
+{
+  "errors": [
+    {
+      "status": "422",
+      "title": "Unprocessable Entity",
+      "detail": "AVS verification failed - ZIP code mismatch"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Error Scenarios
+
+<AccordionGroup>
+  <Accordion title="Invalid or expired token">
+    **Error:** 400 Bad Request
+
+    **Solution:** Ensure the tokenId is valid and was recently generated from the embedded checkout. Tokens may have a limited lifespan.
+  </Accordion>
+
+  <Accordion title="AVS verification failure">
+    **Error:** 422 Unprocessable Entity
+
+    **Solution:** When `useAVS` is true, ensure the billing address ZIP code matches the card's billing ZIP. You can disable AVS by setting `useAVS` to false, but this may increase fraud risk.
+  </Accordion>
+
+  <Accordion title="Card declined">
+    **Error:** 402 Payment Required
+
+    **Solution:** The card issuer declined the transaction. Common reasons include insufficient funds, expired card, or fraud prevention. Ask the customer to contact their bank or use a different payment method.
+  </Accordion>
+
+  <Accordion title="Invalid expiry format">
+    **Error:** 400 Bad Request
+
+    **Solution:** Ensure expiry is in MMYY format (4 digits, no separators). Example: "0229" for February 2029.
+  </Accordion>
+</AccordionGroup>
+
+## Important Notes
+
+<Warning>
+  **Token Security:** Tokens should only be used once. Do not reuse tokens across multiple payment attempts.
+</Warning>
+
+<Note>
+  **AVS Recommendations:** Enabling AVS (`useAVS: true`) provides additional fraud protection but may decline legitimate transactions if address information doesn't match. Consider your risk tolerance when configuring this setting.
+</Note>
+
+<Tip>
+  **Embedded Checkout Required:** Contact Digitzs support to integrate the embedded checkout into your application before using this endpoint. The checkout handles secure card data collection and tokenization.
+</Tip>
+
+## Best Practices
+
+1. **Use Idempotency Keys:** Include `requestId` to prevent duplicate charges if requests are retried
+2. **Collect Complete Addresses:** Provide full billing address information for better AVS verification
+3. **Handle Declines Gracefully:** Display user-friendly error messages and offer alternative payment methods
+4. **Store Payment IDs:** Save the returned payment ID for reconciliation and potential refunds
+5. **Implement Retry Logic:** Handle transient errors with exponential backoff
+6. **Monitor AVS Results:** Track AVS result codes to identify potential fraud patterns
+
+## Understanding Transaction Fees
+
+The response includes detailed fee breakdown:
+
+- **gross:** Total amount charged to the customer
+- **fee:** Fixed transaction fee (typically $0.30)
+- **rate:** Percentage fee (typically 2.9%)
+- **grossMinusNet:** Total fees charged (fee + percentage of gross)
+- **net:** Amount deposited to merchant account (gross - grossMinusNet)
+
+## Next Steps
+
+<Card
+  title="Get Payment Details"
+  icon="magnifying-glass"
+  href="/api-reference/payments/get-by-id"
+>
+  Retrieve full details of a completed payment
+</Card>
+
+<Card
+  title="Create Split Payment"
+  icon="split"
+  href="/api-reference/payments/create-split-payment"
+>
+  Learn how to split payment proceeds across multiple accounts
+</Card>

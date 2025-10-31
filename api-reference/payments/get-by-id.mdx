@@ -1,0 +1,436 @@
+---
+title: "Get Payment by ID"
+api: "GET /payments/{id}"
+description: "Retrieve detailed information about a specific payment transaction"
+---
+
+## Endpoint
+
+```
+GET https://api.digitzs.com/payments/{id}
+```
+
+## Overview
+
+Use this endpoint to retrieve complete details of a specific payment transaction, including transaction status, amounts, fees, and any associated split information.
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique payment transaction ID
+</ParamField>
+
+## Response
+
+### Success Response (200 OK)
+
+<ResponseField name="data" type="object">
+  Container for payment data
+
+  <Expandable title="properties">
+    <ResponseField name="data.type" type="string">
+      Resource type - `"payments"`
+    </ResponseField>
+
+    <ResponseField name="data.id" type="string">
+      Payment transaction ID
+    </ResponseField>
+
+    <ResponseField name="data.attributes" type="object">
+      <Expandable title="Payment attributes">
+        <ResponseField name="paymentType" type="string">
+          Type of payment (e.g., "card", "ACH")
+        </ResponseField>
+
+        <ResponseField name="merchantId" type="string">
+          Merchant account identifier
+        </ResponseField>
+
+        <ResponseField name="createdAt" type="string">
+          ISO 8601 timestamp of when payment was created
+        </ResponseField>
+
+        <ResponseField name="status" type="string">
+          Payment status (pending, completed, failed, refunded, voided)
+        </ResponseField>
+
+        <ResponseField name="transaction" type="object">
+          <Expandable title="Transaction details">
+            <ResponseField name="code" type="string">
+              Response code from processor
+            </ResponseField>
+
+            <ResponseField name="message" type="string">
+              Transaction status message
+            </ResponseField>
+
+            <ResponseField name="amount" type="string">
+              Transaction amount in cents
+            </ResponseField>
+
+            <ResponseField name="currency" type="string">
+              Currency code
+            </ResponseField>
+
+            <ResponseField name="invoice" type="string">
+              Invoice reference number
+            </ResponseField>
+
+            <ResponseField name="authCode" type="string">
+              Authorization code (card payments)
+            </ResponseField>
+
+            <ResponseField name="avsResult" type="string">
+              AVS verification result (card payments)
+            </ResponseField>
+
+            <ResponseField name="gross" type="string">
+              Gross transaction amount
+            </ResponseField>
+
+            <ResponseField name="net" type="string">
+              Net amount after fees
+            </ResponseField>
+
+            <ResponseField name="fee" type="string">
+              Fixed processing fee
+            </ResponseField>
+
+            <ResponseField name="rate" type="string">
+              Percentage rate applied
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="splits" type="array">
+          Array of split transactions (if applicable)
+
+          <Expandable title="Split object">
+            <ResponseField name="merchantId" type="string">
+              Secondary merchant ID
+            </ResponseField>
+
+            <ResponseField name="amount" type="string">
+              Split amount in cents
+            </ResponseField>
+
+            <ResponseField name="status" type="string">
+              Split status
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response - Card Payment
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments/pay_abc123xyz"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_abc123xyz",
+    "attributes": {
+      "paymentType": "card",
+      "merchantId": "merchant_123456",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "status": "completed",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "2500",
+        "currency": "USD",
+        "invoice": "INV-2024-001",
+        "authCode": "A11111",
+        "avsResult": "Y",
+        "gross": "2500",
+        "net": "2399",
+        "grossMinusNet": "101",
+        "fee": "30",
+        "rate": "2.90"
+      }
+    }
+  }
+}
+```
+
+### Example Response - Split Payment
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments/pay_split_abc123"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_split_abc123",
+    "attributes": {
+      "paymentType": "card",
+      "merchantId": "merchant_primary_123",
+      "status": "completed",
+      "transaction": {
+        "amount": "500",
+        "gross": "500",
+        "net": "365",
+        "invoice": "INV-2024-002"
+      },
+      "splits": [
+        {
+          "merchantId": "merchant_platform_456",
+          "amount": "100",
+          "status": "completed"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Example Response - ACH Payment
+
+```json
+{
+  "data": {
+    "type": "payments",
+    "id": "pay_ach_xyz789",
+    "attributes": {
+      "paymentType": "ACH",
+      "merchantId": "merchant_123456",
+      "status": "pending",
+      "transaction": {
+        "code": "0",
+        "message": "Pending",
+        "amount": "3635",
+        "currency": "USD",
+        "invoice": "INV-ACH-001"
+      },
+      "bank": {
+        "accountType": "checking",
+        "last4": "7890"
+      }
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://api.digitzs.com/payments/pay_abc123xyz \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id"
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function getPayment(paymentId) {
+  const response = await axios.get(
+    `https://api.digitzs.com/payments/${paymentId}`,
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id'
+      }
+    }
+  );
+
+  console.log('Payment Status:', response.data.data.attributes.status);
+  console.log('Amount:', response.data.data.attributes.transaction.amount);
+  return response.data;
+}
+
+getPayment('pay_abc123xyz');
+```
+
+```python Python
+import requests
+
+def get_payment(payment_id):
+    url = f"https://api.digitzs.com/payments/{payment_id}"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id"
+    }
+
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+
+    data = response.json()["data"]
+    print(f"Status: {data['attributes']['status']}")
+    print(f"Amount: ${float(data['attributes']['transaction']['amount'])/100:.2f}")
+    return response.json()
+
+get_payment("pay_abc123xyz")
+```
+
+```php PHP
+<?php
+
+function getPayment($paymentId) {
+    $url = "https://api.digitzs.com/payments/" . $paymentId;
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id"
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 200) {
+        $data = json_decode($response, true);
+        echo "Status: " . $data["data"]["attributes"]["status"] . "\n";
+        echo "Amount: $" . ($data["data"]["attributes"]["transaction"]["amount"] / 100) . "\n";
+        return $data;
+    } else {
+        throw new Exception("Error: " . $response);
+    }
+}
+
+getPayment("pay_abc123xyz");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def get_payment(payment_id)
+  uri = URI("https://api.digitzs.com/payments/#{payment_id}")
+
+  request = Net::HTTP::Get.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '200'
+    data = JSON.parse(response.body)['data']
+    puts "Status: #{data['attributes']['status']}"
+    puts "Amount: $#{data['attributes']['transaction']['amount'].to_f / 100}"
+    JSON.parse(response.body)
+  else
+    raise "Error: #{response.body}"
+  end
+end
+
+get_payment('pay_abc123xyz')
+```
+
+</CodeGroup>
+
+## Payment Status Values
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Payment is being processed (common for ACH) |
+| `completed` | Payment successfully processed and settled |
+| `failed` | Payment failed or was declined |
+| `refunded` | Payment has been refunded |
+| `voided` | Payment was voided (same-day cancellation) |
+| `partial_refund` | Payment has been partially refunded |
+
+## Error Responses
+
+<ResponseExample>
+
+```json 404 Not Found
+{
+  "errors": [
+    {
+      "status": "404",
+      "title": "Not Found",
+      "detail": "Payment not found"
+    }
+  ]
+}
+```
+
+```json 403 Forbidden
+{
+  "errors": [
+    {
+      "status": "403",
+      "title": "Forbidden",
+      "detail": "Not authorized to access this payment"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Transaction Reconciliation">
+    Use this endpoint to verify transaction details match your records and reconcile payments with your accounting system.
+  </Accordion>
+
+  <Accordion title="Customer Support">
+    Retrieve payment details when customers inquire about their transactions or report issues.
+  </Accordion>
+
+  <Accordion title="Refund Processing">
+    Check payment status and amount before processing refunds to ensure accuracy.
+  </Accordion>
+
+  <Accordion title="Split Payment Tracking">
+    Monitor distribution of split payments across multiple merchant accounts.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+1. **Cache Appropriately:** Cache payment details but refresh for status updates
+2. **Handle ACH Delays:** ACH payments remain "pending" for 3-5 business days
+3. **Monitor Split Details:** For split payments, verify amounts distributed correctly
+4. **Store Payment IDs:** Always save payment IDs for future reference and support
+5. **Use Webhooks:** Consider implementing webhooks for real-time status updates instead of polling
+
+## Next Steps
+
+<Card
+  title="Get Payment Status"
+  icon="circle-check"
+  href="/api-reference/payments/get-status"
+>
+  Check only the status of a payment (lighter endpoint)
+</Card>
+
+<Card
+  title="List Payments"
+  icon="list"
+  href="/api-reference/payments/list"
+>
+  Retrieve multiple payments for a merchant
+</Card>

@@ -1,0 +1,465 @@
+---
+title: "Refund or Void Payment"
+api: "POST /payments"
+description: "Refund a completed payment or void an eligible transaction"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/payments
+```
+
+## Overview
+
+Use this endpoint to refund a payment or void an eligible transaction. The system automatically determines whether to perform a refund or void based on the transaction timing and type.
+
+<Note>
+  **Void vs Refund:** If the transaction is eligible to be voided, the system will perform a void instead of a refund. Voids are processed faster and don't incur additional processing fees.
+</Note>
+
+## Void Eligibility
+
+Transactions can be voided under these conditions:
+
+- **Card Transactions:** Can be voided before 11:59 PM PST on the same day the transaction was processed
+- **ACH Transactions:** Cannot be voided through the API. Contact support for ACH transaction issues.
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key from onboarding | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data.type" type="string" required>
+  Must be `"payments"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Container for payment attributes
+</ParamField>
+
+<ParamField body="data.attributes.paymentType" type="string" required>
+  Must be `"refund"` for refund/void operations
+</ParamField>
+
+<ParamField body="data.attributes.parentPaymentId" type="string" required>
+  The payment ID of the original transaction to refund or void
+</ParamField>
+
+<ParamField body="data.attributes.transaction" type="object" required>
+  Transaction details
+
+  <Expandable title="Transaction properties">
+    <ParamField body="data.attributes.transaction.amount" type="string" required>
+      Amount to refund in cents. Can be less than original amount for partial refunds.
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.currency" type="string" required>
+      Currency code (must match original transaction)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.miscData" type="string">
+  Optional JSON string with refund reason or additional metadata
+</ParamField>
+
+### Example Request - Full Refund
+
+```json
+{
+  "data": {
+    "type": "payments",
+    "attributes": {
+      "paymentType": "refund",
+      "parentPaymentId": "pay_abc123xyz",
+      "transaction": {
+        "amount": "2500",
+        "currency": "USD"
+      },
+      "miscData": "{\"reason\":\"customer_request\",\"notes\":\"Item damaged\"}"
+    }
+  }
+}
+```
+
+### Example Request - Partial Refund
+
+```json
+{
+  "data": {
+    "type": "payments",
+    "attributes": {
+      "paymentType": "refund",
+      "parentPaymentId": "pay_abc123xyz",
+      "transaction": {
+        "amount": "1000",
+        "currency": "USD"
+      },
+      "miscData": "{\"reason\":\"partial_return\"}"
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_refund_xyz789",
+    "attributes": {
+      "paymentType": "refund",
+      "parentPaymentId": "pay_abc123xyz",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "2500",
+        "currency": "USD",
+        "refundType": "void"
+      }
+    }
+  }
+}
+```
+
+<ResponseField name="data.attributes.transaction.refundType" type="string">
+  Indicates whether transaction was voided (`"void"`) or refunded (`"refund"`)
+</ResponseField>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/payments \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "payments",
+      "attributes": {
+        "paymentType": "refund",
+        "parentPaymentId": "pay_abc123xyz",
+        "transaction": {
+          "amount": "2500",
+          "currency": "USD"
+        }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function refundPayment(paymentId, amount) {
+  const response = await axios.post(
+    'https://api.digitzs.com/payments',
+    {
+      data: {
+        type: 'payments',
+        attributes: {
+          paymentType: 'refund',
+          parentPaymentId: paymentId,
+          transaction: {
+            amount: amount,
+            currency: 'USD'
+          }
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  const refundType = response.data.data.attributes.transaction.refundType;
+  console.log(`${refundType === 'void' ? 'Voided' : 'Refunded'} payment:`, response.data.data.id);
+  return response.data;
+}
+
+// Refund $25.00
+refundPayment('pay_abc123xyz', '2500');
+```
+
+```python Python
+import requests
+
+def refund_payment(payment_id, amount):
+    url = "https://api.digitzs.com/payments"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "payments",
+            "attributes": {
+                "paymentType": "refund",
+                "parentPaymentId": payment_id,
+                "transaction": {
+                    "amount": amount,
+                    "currency": "USD"
+                }
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    refund_type = response.json()["data"]["attributes"]["transaction"]["refundType"]
+    refund_id = response.json()["data"]["id"]
+    print(f"{'Voided' if refund_type == 'void' else 'Refunded'} payment: {refund_id}")
+    return response.json()
+
+# Refund $25.00
+refund_payment("pay_abc123xyz", "2500")
+```
+
+```php PHP
+<?php
+
+function refundPayment($paymentId, $amount) {
+    $url = "https://api.digitzs.com/payments";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "payments",
+            "attributes" => [
+                "paymentType" => "refund",
+                "parentPaymentId" => $paymentId,
+                "transaction" => [
+                    "amount" => $amount,
+                    "currency" => "USD"
+                ]
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        $refundType = $data["data"]["attributes"]["transaction"]["refundType"];
+        $action = $refundType === "void" ? "Voided" : "Refunded";
+        echo "$action payment: " . $data["data"]["id"] . "\n";
+        return $data;
+    } else {
+        throw new Exception("Error: " . $response);
+    }
+}
+
+// Refund $25.00
+refundPayment("pay_abc123xyz", "2500");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def refund_payment(payment_id, amount)
+  uri = URI('https://api.digitzs.com/payments')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'payments',
+      attributes: {
+        paymentType: 'refund',
+        parentPaymentId: payment_id,
+        transaction: {
+          amount: amount,
+          currency: 'USD'
+        }
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    refund_type = data['data']['attributes']['transaction']['refundType']
+    action = refund_type == 'void' ? 'Voided' : 'Refunded'
+    puts "#{action} payment: #{data['data']['id']}"
+    data
+  else
+    raise "Error: #{response.body}"
+  end
+end
+
+# Refund $25.00
+refund_payment('pay_abc123xyz', '2500')
+```
+
+</CodeGroup>
+
+## Void vs Refund Comparison
+
+| Feature | Void | Refund |
+|---------|------|--------|
+| **Timing** | Same day before 11:59 PM PST | Any time after settlement |
+| **Processing Speed** | Immediate | 3-10 business days |
+| **Additional Fees** | None | May incur refund processing fees |
+| **Fund Return** | Instantly released on customer's card | Processed as credit to customer's card |
+| **Transaction Record** | Transaction cancelled | New refund transaction created |
+
+## Error Responses
+
+<ResponseExample>
+
+```json 400 Bad Request - Invalid amount
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "Refund amount exceeds original transaction amount"
+    }
+  ]
+}
+```
+
+```json 404 Not Found
+{
+  "errors": [
+    {
+      "status": "404",
+      "title": "Not Found",
+      "detail": "Parent payment not found"
+    }
+  ]
+}
+```
+
+```json 422 Unprocessable Entity
+{
+  "errors": [
+    {
+      "status": "422",
+      "title": "Unprocessable Entity",
+      "detail": "Payment has already been fully refunded"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Error Scenarios
+
+<AccordionGroup>
+  <Accordion title="Payment not found">
+    **Error:** 404 Not Found
+
+    **Solution:** Verify the parentPaymentId is correct and the payment exists in your account.
+  </Accordion>
+
+  <Accordion title="Refund amount exceeds original">
+    **Error:** 400 Bad Request
+
+    **Solution:** Ensure the refund amount doesn't exceed the original transaction amount or the remaining refundable balance.
+  </Accordion>
+
+  <Accordion title="Payment already refunded">
+    **Error:** 422 Unprocessable Entity
+
+    **Solution:** Check the payment status. If already fully refunded, no additional refunds are possible.
+  </Accordion>
+
+  <Accordion title="ACH refund attempted">
+    **Error:** 422 Unprocessable Entity
+
+    **Solution:** Contact Digitzs support for ACH refund processing. ACH refunds require special handling.
+  </Accordion>
+</AccordionGroup>
+
+## Important Notes
+
+<Warning>
+  **ACH Transactions:** Do not use this endpoint for ACH transactions. Contact Digitzs support for ACH refund assistance.
+</Warning>
+
+<Note>
+  **Partial Refunds:** Multiple partial refunds are supported up to the original transaction amount.
+</Note>
+
+<Tip>
+  **Void Window:** Process refunds on the same day before 11:59 PM PST to get instant voids instead of multi-day refunds.
+</Tip>
+
+## Best Practices
+
+1. **Check Timing:** If same-day, consider the void window for faster processing
+2. **Track Refunds:** Monitor all refund transactions for reconciliation
+3. **Document Reasons:** Use miscData to record why refunds were issued
+4. **Validate Amounts:** Ensure refund amount doesn't exceed original or remaining balance
+5. **Customer Communication:** Inform customers about refund processing time (instant void vs 3-10 day refund)
+6. **Handle Splits:** Use the split refund endpoint for split payments
+
+## Next Steps
+
+<Card
+  title="Refund Split Payment"
+  icon="split"
+  href="/api-reference/payments/refund-split"
+>
+  Learn how to refund split payments
+</Card>
+
+<Card
+  title="Get Payment Status"
+  icon="magnifying-glass"
+  href="/api-reference/payments/get-status"
+>
+  Check refund status
+</Card>

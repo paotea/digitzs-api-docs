@@ -1,0 +1,425 @@
+---
+title: "List Payments"
+api: "GET /payments"
+description: "Retrieve a list of payment transactions for a merchant"
+---
+
+## Endpoint
+
+```
+GET https://api.digitzs.com/payments
+```
+
+## Overview
+
+Use this endpoint to retrieve a paginated list of payment transactions for a specific merchant account.
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+
+## Query Parameters
+
+<ParamField query="id" type="string" required>
+  Merchant ID to retrieve payments for
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of results per page (default: 25, max: 100)
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Number of results to skip for pagination (default: 0)
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  Filter payments created after this date (ISO 8601 format)
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  Filter payments created before this date (ISO 8601 format)
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by payment status: `pending`, `completed`, `failed`, `refunded`, `voided`
+</ParamField>
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments?id=merchant_123456&limit=25",
+    "next": "https://api.digitzs.com/payments?id=merchant_123456&limit=25&offset=25"
+  },
+  "data": [
+    {
+      "type": "payments",
+      "id": "pay_abc123",
+      "attributes": {
+        "paymentType": "card",
+        "status": "completed",
+        "createdAt": "2024-01-15T10:30:00Z",
+        "transaction": {
+          "amount": "2500",
+          "currency": "USD",
+          "invoice": "INV-001",
+          "gross": "2500",
+          "net": "2399"
+        }
+      }
+    },
+    {
+      "type": "payments",
+      "id": "pay_xyz789",
+      "attributes": {
+        "paymentType": "ACH",
+        "status": "pending",
+        "createdAt": "2024-01-15T09:00:00Z",
+        "transaction": {
+          "amount": "10000",
+          "currency": "USD",
+          "invoice": "INV-002"
+        }
+      }
+    }
+  ],
+  "meta": {
+    "total": 156,
+    "limit": 25,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+<ResponseField name="data" type="array">
+  Array of payment objects (see GET /payments/{id} for full object structure)
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Pagination metadata
+
+  <Expandable title="properties">
+    <ResponseField name="total" type="integer">
+      Total number of payments matching the query
+    </ResponseField>
+
+    <ResponseField name="limit" type="integer">
+      Number of results per page
+    </ResponseField>
+
+    <ResponseField name="offset" type="integer">
+      Current pagination offset
+    </ResponseField>
+
+    <ResponseField name="hasMore" type="boolean">
+      Whether more results are available
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://api.digitzs.com/payments?id=merchant_123456&limit=25" \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id"
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function listPayments(merchantId, options = {}) {
+  const params = new URLSearchParams({
+    id: merchantId,
+    limit: options.limit || 25,
+    offset: options.offset || 0,
+    ...options.filters
+  });
+
+  const response = await axios.get(
+    `https://api.digitzs.com/payments?${params}`,
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id'
+      }
+    }
+  );
+
+  console.log(`Retrieved ${response.data.data.length} payments`);
+  console.log(`Total: ${response.data.meta.total}`);
+  return response.data;
+}
+
+// Get first page
+listPayments('merchant_123456');
+
+// Get completed payments from specific date range
+listPayments('merchant_123456', {
+  limit: 50,
+  filters: {
+    status: 'completed',
+    startDate: '2024-01-01',
+    endDate: '2024-01-31'
+  }
+});
+```
+
+```python Python
+import requests
+from urllib.parse import urlencode
+
+def list_payments(merchant_id, limit=25, offset=0, **filters):
+    url = "https://api.digitzs.com/payments"
+
+    params = {
+        "id": merchant_id,
+        "limit": limit,
+        "offset": offset,
+        **filters
+    }
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id"
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+
+    data = response.json()
+    print(f"Retrieved {len(data['data'])} payments")
+    print(f"Total: {data['meta']['total']}")
+    return data
+
+# Get first page
+list_payments("merchant_123456")
+
+# Get completed payments from January 2024
+list_payments(
+    "merchant_123456",
+    limit=50,
+    status="completed",
+    startDate="2024-01-01",
+    endDate="2024-01-31"
+)
+```
+
+```php PHP
+<?php
+
+function listPayments($merchantId, $options = []) {
+    $params = array_merge([
+        'id' => $merchantId,
+        'limit' => 25,
+        'offset' => 0
+    ], $options);
+
+    $url = "https://api.digitzs.com/payments?" . http_build_query($params);
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id"
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+    echo "Retrieved " . count($data["data"]) . " payments\n";
+    echo "Total: " . $data["meta"]["total"] . "\n";
+    return $data;
+}
+
+// Get first page
+listPayments("merchant_123456");
+
+// Get completed payments from January 2024
+listPayments("merchant_123456", [
+    'limit' => 50,
+    'status' => 'completed',
+    'startDate' => '2024-01-01',
+    'endDate' => '2024-01-31'
+]);
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def list_payments(merchant_id, options = {})
+  params = {
+    id: merchant_id,
+    limit: options[:limit] || 25,
+    offset: options[:offset] || 0
+  }.merge(options[:filters] || {})
+
+  uri = URI('https://api.digitzs.com/payments')
+  uri.query = URI.encode_www_form(params)
+
+  request = Net::HTTP::Get.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  data = JSON.parse(response.body)
+  puts "Retrieved #{data['data'].length} payments"
+  puts "Total: #{data['meta']['total']}"
+  data
+end
+
+# Get first page
+list_payments('merchant_123456')
+
+# Get completed payments from January 2024
+list_payments('merchant_123456', {
+  limit: 50,
+  filters: {
+    status: 'completed',
+    startDate: '2024-01-01',
+    endDate: '2024-01-31'
+  }
+})
+```
+
+</CodeGroup>
+
+## Pagination Example
+
+```javascript
+async function getAllPayments(merchantId) {
+  let allPayments = [];
+  let offset = 0;
+  const limit = 100; // Max per request
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await listPayments(merchantId, { limit, offset });
+    allPayments = allPayments.concat(response.data);
+    hasMore = response.meta.hasMore;
+    offset += limit;
+
+    console.log(`Fetched ${allPayments.length} of ${response.meta.total} payments`);
+  }
+
+  return allPayments;
+}
+```
+
+## Filtering Best Practices
+
+<AccordionGroup>
+  <Accordion title="Date Range Queries">
+    Always specify both startDate and endDate for better performance:
+
+    ```
+    ?startDate=2024-01-01&endDate=2024-01-31
+    ```
+  </Accordion>
+
+  <Accordion title="Status Filtering">
+    Filter by status to reduce response size:
+
+    ```
+    ?status=completed&startDate=2024-01-01
+    ```
+  </Accordion>
+
+  <Accordion title="Large Result Sets">
+    Use maximum limit (100) to minimize API calls when retrieving large datasets:
+
+    ```
+    ?limit=100&offset=0
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<ResponseExample>
+
+```json 400 Bad Request
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "Invalid merchant ID"
+    }
+  ]
+}
+```
+
+```json 403 Forbidden
+{
+  "errors": [
+    {
+      "status": "403",
+      "title": "Forbidden",
+      "detail": "Not authorized to access this merchant's payments"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Use Cases
+
+1. **Transaction History:** Display payment history in merchant dashboard
+2. **Reporting:** Generate financial reports for specific date ranges
+3. **Reconciliation:** Match payments with bank deposits
+4. **Analytics:** Analyze payment trends and patterns
+5. **Customer Support:** Search for specific transactions by invoice or date
+
+## Performance Tips
+
+<Tip>
+  **Optimize Queries:** Use date ranges and status filters to reduce result set size and improve response times.
+</Tip>
+
+<Note>
+  **Caching:** Consider caching results for completed payments as they won't change (except for potential refunds).
+</Note>
+
+## Next Steps
+
+<Card
+  title="Get Payment Details"
+  icon="magnifying-glass"
+  href="/api-reference/payments/get-by-id"
+>
+  View complete details for a specific payment
+</Card>
+
+<Card
+  title="Create Payment"
+  icon="plus"
+  href="/api-reference/payments/create-token-payment"
+>
+  Process a new payment transaction
+</Card>

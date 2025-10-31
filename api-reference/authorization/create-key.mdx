@@ -1,0 +1,363 @@
+---
+title: "Create API Key"
+api: "POST /auth/key"
+description: "Generate an app key for your application to create access tokens"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/auth/key
+```
+
+## Overview
+
+Use this endpoint to generate an app key for your application. The app key is required to create access tokens via the `/auth/token` endpoint.
+
+<Warning>
+  Creating a new app key renders the previous key unusable. Plan key rotation carefully to avoid service disruption.
+</Warning>
+
+## Authentication
+
+This endpoint requires only the `x-api-key` header. No Bearer token is needed.
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key from onboarding | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data" type="object" required>
+  Container for API data
+</ParamField>
+
+<ParamField body="data.type" type="string" required>
+  Must be `"auth"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Container for authentication attributes
+</ParamField>
+
+<ParamField body="data.attributes.appId" type="string" required>
+  Your application ID provided during onboarding
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "auth",
+    "attributes": {
+      "appId": "your-application-id"
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+<ResponseField name="links" type="object">
+  Contains URLs related to the resource
+
+  <Expandable title="properties">
+    <ResponseField name="links.self" type="string">
+      URL of the current endpoint
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Container for response data
+
+  <Expandable title="properties">
+    <ResponseField name="data.type" type="string">
+      Resource type - will be `"auth"`
+    </ResponseField>
+
+    <ResponseField name="data.id" type="string">
+      Your API key (same as the x-api-key header)
+    </ResponseField>
+
+    <ResponseField name="data.attributes" type="object">
+      <Expandable title="properties">
+        <ResponseField name="data.attributes.appKey" type="string">
+          Generated app key for creating access tokens
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/auth/key"
+  },
+  "data": {
+    "type": "auth",
+    "id": "api-key-xyz",
+    "attributes": {
+      "appKey": "generated-app-key-abc123"
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/auth/key \
+  -H "x-api-key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "auth",
+      "attributes": {
+        "appId": "your-application-id"
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function createAppKey() {
+  const response = await axios.post(
+    'https://api.digitzs.com/auth/key',
+    {
+      data: {
+        type: 'auth',
+        attributes: {
+          appId: 'your-application-id'
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  const appKey = response.data.data.attributes.appKey;
+  console.log('App Key:', appKey);
+  return appKey;
+}
+
+createAppKey();
+```
+
+```python Python
+import requests
+
+def create_app_key():
+    url = "https://api.digitzs.com/auth/key"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "auth",
+            "attributes": {
+                "appId": "your-application-id"
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    app_key = response.json()["data"]["attributes"]["appKey"]
+    print(f"App Key: {app_key}")
+    return app_key
+
+create_app_key()
+```
+
+```php PHP
+<?php
+
+function createAppKey() {
+    $url = "https://api.digitzs.com/auth/key";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "auth",
+            "attributes" => [
+                "appId" => "your-application-id"
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        $appKey = $data["data"]["attributes"]["appKey"];
+        echo "App Key: " . $appKey . "\n";
+        return $appKey;
+    } else {
+        throw new Exception("Error creating app key: " . $response);
+    }
+}
+
+createAppKey();
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_app_key
+  uri = URI('https://api.digitzs.com/auth/key')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'auth',
+      attributes: {
+        appId: 'your-application-id'
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    app_key = data['data']['attributes']['appKey']
+    puts "App Key: #{app_key}"
+    app_key
+  else
+    raise "Error creating app key: #{response.body}"
+  end
+end
+
+create_app_key
+```
+
+</CodeGroup>
+
+## Error Responses
+
+<ResponseExample>
+
+```json 400 Bad Request
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "The appId field is required",
+      "source": {
+        "pointer": "/data/attributes/appId"
+      }
+    }
+  ]
+}
+```
+
+```json 401 Unauthorized
+{
+  "errors": [
+    {
+      "status": "401",
+      "title": "Unauthorized",
+      "detail": "Invalid API key"
+    }
+  ]
+}
+```
+
+```json 403 Forbidden
+{
+  "errors": [
+    {
+      "status": "403",
+      "title": "Forbidden",
+      "detail": "The account is not authorized"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Error Scenarios
+
+<AccordionGroup>
+  <Accordion title="Missing x-api-key header">
+    **Error:** 401 Unauthorized
+
+    **Solution:** Ensure the `x-api-key` header is included in the request with your valid API key.
+  </Accordion>
+
+  <Accordion title="Invalid appId">
+    **Error:** 400 Bad Request
+
+    **Solution:** Verify your application ID matches the ID provided during onboarding.
+  </Accordion>
+
+  <Accordion title="Account suspended">
+    **Error:** 403 Forbidden
+
+    **Solution:** Contact Digitzs support to check your account status.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  **Store Securely:** Save the returned app key in a secure location (environment variable or secret management service). You'll need it to generate access tokens.
+</Tip>
+
+<Note>
+  **Key Rotation:** When creating a new app key, the previous key becomes invalid immediately. Ensure all services are updated before rotating keys.
+</Note>
+
+## Next Steps
+
+After creating an app key, use it to generate an access token:
+
+<Card
+  title="Create App Token"
+  icon="lock"
+  href="/api-reference/authorization/create-token"
+>
+  Generate an access token using your app key
+</Card>

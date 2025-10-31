@@ -1,0 +1,360 @@
+---
+title: "Update Merchant AVS Mode"
+api: "PUT /merchants/{id}/avsMode"
+description: "Update the Address Verification System (AVS) mode for a merchant"
+---
+
+## Endpoint
+
+```
+PUT https://api.digitzs.com/merchants/{id}
+```
+
+## Overview
+
+Use this endpoint to update the AVS (Address Verification System) verification mode for a merchant account. AVS helps prevent fraudulent card transactions by verifying the cardholder's billing address.
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The merchant account ID
+</ParamField>
+
+## Request Body
+
+<ParamField body="data.type" type="string" required>
+  Must be `"merchants"`
+</ParamField>
+
+<ParamField body="data.attributes.group" type="string" required>
+  Must be `"AVS"`
+</ParamField>
+
+<ParamField body="data.attributes.AVS" type="string" required>
+  AVS mode to set:
+  - `"Standard"` - Requires ZIP code match
+  - `"Strict"` - Requires full address match
+  - `"Disabled"` - No AVS verification
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "merchants",
+    "attributes": {
+      "group": "AVS",
+      "AVS": "Strict"
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/merchants/merchant_abc123"
+  },
+  "data": {
+    "type": "merchants",
+    "id": "merchant_abc123",
+    "attributes": {
+      "AVS": "Strict",
+      "updatedAt": "2024-01-20T16:00:00Z"
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X PUT https://api.digitzs.com/merchants/merchant_abc123 \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "merchants",
+      "attributes": {
+        "group": "AVS",
+        "AVS": "Strict"
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function updateMerchantAVS(merchantId, avsMode) {
+  const response = await axios.put(
+    `https://api.digitzs.com/merchants/${merchantId}`,
+    {
+      data: {
+        type: 'merchants',
+        attributes: {
+          group: 'AVS',
+          AVS: avsMode
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  console.log(`AVS mode updated to: ${avsMode}`);
+  return response.data;
+}
+
+// Set to strict mode
+updateMerchantAVS('merchant_abc123', 'Strict');
+```
+
+```python Python
+import requests
+
+def update_merchant_avs(merchant_id, avs_mode):
+    url = f"https://api.digitzs.com/merchants/{merchant_id}"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "merchants",
+            "attributes": {
+                "group": "AVS",
+                "AVS": avs_mode
+            }
+        }
+    }
+
+    response = requests.put(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    print(f"AVS mode updated to: {avs_mode}")
+    return response.json()
+
+# Set to strict mode
+update_merchant_avs("merchant_abc123", "Strict")
+```
+
+```php PHP
+<?php
+
+function updateMerchantAVS($merchantId, $avsMode) {
+    $url = "https://api.digitzs.com/merchants/" . $merchantId;
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "merchants",
+            "attributes" => [
+                "group" => "AVS",
+                "AVS" => $avsMode
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    echo "AVS mode updated to: $avsMode\n";
+    return json_decode($response, true);
+}
+
+// Set to strict mode
+updateMerchantAVS("merchant_abc123", "Strict");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+def update_merchant_avs(merchant_id, avs_mode)
+  uri = URI("https://api.digitzs.com/merchants/#{merchant_id}")
+  request = Net::HTTP::Put.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'merchants',
+      attributes: {
+        group: 'AVS',
+        AVS: avs_mode
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  puts "AVS mode updated to: #{avs_mode}"
+  JSON.parse(response.body)
+end
+
+# Set to strict mode
+update_merchant_avs('merchant_abc123', 'Strict')
+```
+
+</CodeGroup>
+
+## AVS Mode Comparison
+
+| Mode | Verification Level | Fraud Protection | Customer Friction | Best For |
+|------|-------------------|------------------|-------------------|----------|
+| **Disabled** | None | Low | None | Low-risk businesses, high trust environments |
+| **Standard** | ZIP code match | Medium | Low | Most businesses, balanced approach |
+| **Strict** | Full address match | High | Medium | High-risk categories, maximum security |
+
+## Understanding AVS
+
+<AccordionGroup>
+  <Accordion title="Standard Mode">
+    **Requirements:** ZIP/postal code must match billing address on file with card issuer
+
+    **Pros:**
+    - Good fraud prevention
+    - Minimal customer friction
+    - Industry standard
+
+    **Cons:**
+    - Won't catch address fraud if ZIP is correct
+
+    **Recommended for:** General e-commerce, most businesses
+  </Accordion>
+
+  <Accordion title="Strict Mode">
+    **Requirements:** Street address AND ZIP code must match
+
+    **Pros:**
+    - Maximum fraud prevention
+    - Comprehensive address verification
+    - Protects high-value transactions
+
+    **Cons:**
+    - Higher false decline rate
+    - More customer friction
+    - Legitimate typos cause failures
+
+    **Recommended for:** High-value items, high-risk industries, luxury goods
+  </Accordion>
+
+  <Accordion title="Disabled Mode">
+    **Requirements:** No address verification
+
+    **Pros:**
+    - No customer friction
+    - Faster checkout
+    - No legitimate decline from AVS
+
+    **Cons:**
+    - Minimal fraud protection
+    - Higher chargeback risk
+    - May violate compliance requirements
+
+    **Recommended for:** Known customers, trusted environments, low-risk scenarios
+  </Accordion>
+</AccordionGroup>
+
+## Important Notes
+
+<Warning>
+  **Fraud Risk:** Disabling AVS increases fraud risk. Only disable if you have alternative fraud prevention measures in place.
+</Warning>
+
+<Note>
+  **Immediate Effect:** AVS mode changes apply immediately to all new transactions. In-flight transactions use the mode active at the time they were initiated.
+</Note>
+
+<Tip>
+  **Balance Security and Conversion:** Standard mode provides good security while minimizing false declines. Start with Standard and adjust based on fraud patterns.
+</Tip>
+
+## Best Practices
+
+1. **Monitor Fraud Rates:** Track chargeback rates after AVS changes
+2. **Consider Your Industry:** High-risk industries should use Strict mode
+3. **Test Changes:** Test AVS impact on legitimate transactions before switching modes
+4. **Customer Communication:** Inform customers about address verification requirements
+5. **Gradual Changes:** When increasing strictness, monitor conversion rates closely
+
+## When to Use Each Mode
+
+**Use Standard when:**
+- Running general e-commerce
+- Balancing security and conversion
+- Processing medium-value transactions
+
+**Use Strict when:**
+- Selling high-value items ($500+)
+- Operating in high-fraud industries
+- Experiencing elevated chargeback rates
+- Regulatory requirements demand it
+
+**Use Disabled when:**
+- Processing known/trusted customers
+- Running internal testing
+- Accepting only low-value transactions
+- Having comprehensive alternative fraud tools
+
+## Next Steps
+
+<Card
+  title="Get Merchant Details"
+  icon="building"
+  href="/api-reference/merchants/get-by-id"
+>
+  Verify updated AVS settings
+</Card>
+
+<Card
+  title="Create Payment"
+  icon="credit-card"
+  href="/api-reference/payments/create-token-payment"
+>
+  Process payments with your AVS configuration
+</Card>

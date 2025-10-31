@@ -1,0 +1,479 @@
+---
+title: "Create Merchant"
+api: "POST /merchants"
+description: "Create a new merchant account with full onboarding information"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/merchants
+```
+
+## Overview
+
+Use this endpoint to create a new merchant account. This comprehensive onboarding process collects personal, business, and banking information required for payment processing.
+
+<Note>
+  Merchant accounts are created in real-time and can begin processing payments immediately upon approval.
+</Note>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data.type" type="string" required>
+  Must be `"merchants"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Merchant account attributes
+</ParamField>
+
+<ParamField body="data.attributes.AVS" type="string" required>
+  AVS mode: `"Standard"`, `"Strict"`, or `"Disabled"`
+</ParamField>
+
+<ParamField body="data.attributes.accountType" type="string" required>
+  Account type: `"personal"` or `"business"`
+</ParamField>
+
+<ParamField body="data.attributes.accountName" type="string" required>
+  Name for the merchant account
+</ParamField>
+
+<ParamField body="data.attributes.miscData" type="string">
+  Optional additional metadata
+</ParamField>
+
+<ParamField body="data.attributes.personalInfo" type="object" required>
+  Personal information for account holder
+
+  <Expandable title="Personal info properties">
+    <ParamField body="firstName" type="string" required>
+      First name
+    </ParamField>
+
+    <ParamField body="lastName" type="string" required>
+      Last name
+    </ParamField>
+
+    <ParamField body="email" type="string" required>
+      Email address
+    </ParamField>
+
+    <ParamField body="dayPhone" type="string" required>
+      Daytime phone number
+    </ParamField>
+
+    <ParamField body="eveningPhone" type="string">
+      Evening phone number
+    </ParamField>
+
+    <ParamField body="birthDate" type="string" required>
+      Date of birth (MM-DD-YYYY format)
+    </ParamField>
+
+    <ParamField body="socialSecurity" type="string" required>
+      Social Security Number (SSN)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.personalAddress" type="object" required>
+  Personal address
+
+  <Expandable title="Address properties">
+    <ParamField body="line1" type="string" required>Street address</ParamField>
+    <ParamField body="line2" type="string">Address line 2</ParamField>
+    <ParamField body="city" type="string" required>City</ParamField>
+    <ParamField body="state" type="string" required>State code</ParamField>
+    <ParamField body="zip" type="string" required>ZIP code</ParamField>
+    <ParamField body="country" type="string" required>Country code</ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.businessInfo" type="object">
+  Business information (required for business accounts)
+
+  <Expandable title="Business info properties">
+    <ParamField body="businessName" type="string" required>
+      Legal business name
+    </ParamField>
+
+    <ParamField body="ein" type="string" required>
+      Employer Identification Number (EIN)
+    </ParamField>
+
+    <ParamField body="phone" type="string" required>
+      Business phone number
+    </ParamField>
+
+    <ParamField body="email" type="string" required>
+      Business email address
+    </ParamField>
+
+    <ParamField body="url" type="string">
+      Business website URL
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.businessAddress" type="object">
+  Business address (required for business accounts)
+</ParamField>
+
+<ParamField body="data.attributes.bankInfo" type="object" required>
+  Bank account information for deposits
+
+  <Expandable title="Bank info properties">
+    <ParamField body="bankName" type="string" required>
+      Name of financial institution
+    </ParamField>
+
+    <ParamField body="accountOwnership" type="string" required>
+      `"personal"` or `"business"`
+    </ParamField>
+
+    <ParamField body="accountType" type="string" required>
+      `"checking"` or `"savings"`
+    </ParamField>
+
+    <ParamField body="accountName" type="string" required>
+      Account holder name
+    </ParamField>
+
+    <ParamField body="accountNumber" type="string" required>
+      Bank account number
+    </ParamField>
+
+    <ParamField body="routingNumber" type="string" required>
+      9-digit routing number
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.verificationData" type="object" required>
+  Verification and compliance data
+
+  <Expandable title="Verification properties">
+    <ParamField body="ipAddress" type="string" required>
+      IP address of account holder during signup
+    </ParamField>
+
+    <ParamField body="emailVerified" type="boolean" required>
+      Whether email has been verified
+    </ParamField>
+
+    <ParamField body="emailVerifiedTimestamp" type="string">
+      ISO 8601 timestamp of email verification
+    </ParamField>
+
+    <ParamField body="signature" type="string" required>
+      Account holder's signature
+    </ParamField>
+
+    <ParamField body="signatureTimestamp" type="string" required>
+      ISO 8601 timestamp of signature
+    </ParamField>
+
+    <ParamField body="termsAccepted" type="boolean" required>
+      Must be `true` - indicates terms acceptance
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.threatMetrixPolicy" type="string">
+  Fraud detection policy: `"Default"`, `"Strict"`, or `"Disabled"`
+</ParamField>
+
+<ParamField body="data.attributes.threatMetrixSessionId" type="string">
+  ThreatMetrix session identifier for fraud screening
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "merchants",
+    "attributes": {
+      "AVS": "Standard",
+      "accountType": "business",
+      "accountName": "Acme Corporation",
+      "personalInfo": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@example.com",
+        "dayPhone": "4155551234",
+        "eveningPhone": "4155551234",
+        "birthDate": "01-15-1980",
+        "socialSecurity": "123456789"
+      },
+      "personalAddress": {
+        "line1": "123 Main Street",
+        "line2": "Suite 100",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94102",
+        "country": "USA"
+      },
+      "businessInfo": {
+        "businessName": "Acme Corporation",
+        "ein": "987654321",
+        "phone": "4155555000",
+        "email": "info@acme.com",
+        "url": "https://acme.com"
+      },
+      "businessAddress": {
+        "line1": "456 Market Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94102",
+        "country": "USA"
+      },
+      "bankInfo": {
+        "bankName": "Bank of America",
+        "accountOwnership": "business",
+        "accountType": "checking",
+        "accountName": "Acme Corporation",
+        "accountNumber": "1234567890",
+        "routingNumber": "026009593"
+      },
+      "verificationData": {
+        "ipAddress": "192.168.1.1",
+        "emailVerified": true,
+        "emailVerifiedTimestamp": "2024-01-15T10:00:00Z",
+        "signature": "John Doe",
+        "signatureTimestamp": "2024-01-15T10:05:00Z",
+        "termsAccepted": true
+      },
+      "threatMetrixPolicy": "Default",
+      "threatMetrixSessionId": "abc123session456"
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/merchants"
+  },
+  "data": {
+    "type": "merchants",
+    "id": "merchant_abc123xyz"
+  }
+}
+```
+
+<ResponseField name="data.id" type="string">
+  Unique merchant account identifier. Use this ID for all payment processing.
+</ResponseField>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/merchants \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "merchants",
+      "attributes": {
+        "AVS": "Standard",
+        "accountType": "business",
+        "accountName": "Acme Corporation",
+        "personalInfo": { ... },
+        "personalAddress": { ... },
+        "businessInfo": { ... },
+        "businessAddress": { ... },
+        "bankInfo": { ... },
+        "verificationData": { ... }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function createMerchant(merchantData) {
+  const response = await axios.post(
+    'https://api.digitzs.com/merchants',
+    {
+      data: {
+        type: 'merchants',
+        attributes: merchantData
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  const merchantId = response.data.data.id;
+  console.log('New Merchant ID:', merchantId);
+  return merchantId;
+}
+```
+
+```python Python
+import requests
+
+def create_merchant(merchant_data):
+    url = "https://api.digitzs.com/merchants"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "merchants",
+            "attributes": merchant_data
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    merchant_id = response.json()["data"]["id"]
+    print(f"New Merchant ID: {merchant_id}")
+    return merchant_id
+```
+
+```php PHP
+<?php
+
+function createMerchant($merchantData) {
+    $url = "https://api.digitzs.com/merchants";
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "merchants",
+            "attributes" => $merchantData
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $data = json_decode($response, true);
+    curl_close($ch);
+
+    return $data["data"]["id"];
+}
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+def create_merchant(merchant_data)
+  uri = URI('https://api.digitzs.com/merchants')
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'merchants',
+      attributes: merchant_data
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  data = JSON.parse(response.body)
+  data['data']['id']
+end
+```
+
+</CodeGroup>
+
+## AVS Modes
+
+| Mode | Description |
+|------|-------------|
+| `Standard` | Requires ZIP code match for card payments |
+| `Strict` | Requires full address match for card payments |
+| `Disabled` | No AVS verification required |
+
+## Important Notes
+
+<Warning>
+  **Sensitive Data:** This endpoint handles sensitive personal and financial information. Ensure your application uses HTTPS and follows security best practices.
+</Warning>
+
+<Note>
+  **Real-Time Creation:** Merchant accounts are created instantly and can process payments immediately after successful creation.
+</Note>
+
+<Tip>
+  **Fraud Prevention:** Use ThreatMetrix integration for enhanced fraud detection during merchant onboarding.
+</Tip>
+
+## Best Practices
+
+1. **Validate Data:** Validate all fields before submission to prevent errors
+2. **Secure Collection:** Use secure forms to collect sensitive information
+3. **Email Verification:** Verify email addresses before creating accounts
+4. **Terms Acceptance:** Ensure users explicitly accept terms and conditions
+5. **IP Logging:** Record accurate IP addresses for compliance
+6. **Test Mode:** Test thoroughly in sandbox before production deployment
+
+## Next Steps
+
+<Card
+  title="Get Merchant Details"
+  icon="building"
+  href="/api-reference/merchants/get-by-id"
+>
+  Retrieve merchant account information
+</Card>
+
+<Card
+  title="Update Bank Info"
+  icon="bank"
+  href="/api-reference/merchants/update-bank-info"
+>
+  Update merchant bank account details
+</Card>

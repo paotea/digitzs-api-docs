@@ -1,0 +1,633 @@
+---
+title: "Error Codes"
+description: "Understanding HTTP status codes and error responses from the Digitzs API"
+---
+
+## Overview
+
+The Digitzs API uses standard HTTP status codes to indicate the success or failure of API requests. When an error occurs, the API returns a status code that helps you understand what went wrong and how to fix it.
+
+<Info>
+  Status codes follow the Internet Engineering Task Force (IETF) Request for Comments (RFCs) standards.
+</Info>
+
+## Status Code Categories
+
+HTTP status codes are organized into five categories based on the first digit:
+
+<CardGroup cols={2}>
+  <Card title="1xx - Informational" icon="circle-info">
+    The request was received, continuing process
+  </Card>
+  <Card title="2xx - Successful" icon="circle-check">
+    The request was successfully received, understood, and accepted
+  </Card>
+  <Card title="3xx - Redirection" icon="arrows-turn-right">
+    Further action is necessary to complete the request
+  </Card>
+  <Card title="4xx - Client Error" icon="triangle-exclamation">
+    The request contains bad syntax or cannot be fulfilled
+  </Card>
+  <Card title="5xx - Server Error" icon="server">
+    The server failed to fulfill an apparently valid request
+  </Card>
+</CardGroup>
+
+## HTTP Status Codes
+
+### Success Codes (2xx)
+
+<ResponseField name="200 - OK" type="Success">
+  The request was successful and the server returned the requested data.
+
+  **When you'll see it:**
+  - Successfully retrieving merchant data
+  - Successfully retrieving payment information
+  - Successfully listing resources
+
+  ```json
+  {
+    "links": {
+      "self": "https://api.digitzs.com/merchants"
+    },
+    "data": {
+      "type": "merchants",
+      "id": "merchant-123",
+      "attributes": { ... }
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="201 - Created" type="Success">
+  The request was successful and a new resource was created.
+
+  **When you'll see it:**
+  - Creating a new merchant account
+  - Processing a new payment
+  - Generating authentication tokens
+
+  ```json
+  {
+    "links": {
+      "self": "https://api.digitzs.com/payments"
+    },
+    "data": {
+      "type": "payments",
+      "id": "payment-456",
+      "attributes": { ... }
+    }
+  }
+  ```
+</ResponseField>
+
+### Client Error Codes (4xx)
+
+<ResponseField name="400 - Bad Request" type="Error">
+  The server cannot process the request due to invalid syntax or missing required parameters.
+
+  **Common causes:**
+  - Missing required fields in request body
+  - Invalid data format (e.g., non-numeric amount)
+  - Malformed JSON
+  - Invalid parameter values
+
+  **How to fix:**
+  - Verify all required fields are included
+  - Check data types match the API specification
+  - Validate JSON syntax
+  - Review the error message for specific field issues
+
+  ```json
+  {
+    "errors": [{
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "The amount field is required"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="401 - Unauthorized" type="Error">
+  Authentication is required or has failed. The request lacks valid authentication credentials.
+
+  **Common causes:**
+  - Missing Authorization header
+  - Expired app token (tokens expire after 1 hour)
+  - Invalid or malformed token
+  - Missing x-api-key header
+
+  **How to fix:**
+  - Generate a new app token using `/auth/token`
+  - Ensure Authorization header format is `Bearer {token}` with capital "B"
+  - Verify your API key is correct
+  - Include all required authentication headers
+
+  ```json
+  {
+    "errors": [{
+      "status": "401",
+      "title": "Unauthorized",
+      "detail": "An authorization header is required"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="402 - Payment Required" type="Error">
+  Reserved for future use. This status code is not currently used by the Digitzs API.
+</ResponseField>
+
+<ResponseField name="403 - Forbidden" type="Error">
+  The server understood the request but refuses to authorize it.
+
+  **Common causes:**
+  - Account is not authorized to access the resource
+  - API key has been revoked or suspended
+  - Insufficient permissions for the requested operation
+  - Attempting to access another merchant's data
+
+  **How to fix:**
+  - Contact Digitzs support to verify account status
+  - Check that you're accessing resources you own
+  - Verify your account permissions
+
+  ```json
+  {
+    "errors": [{
+      "status": "403",
+      "title": "Forbidden",
+      "detail": "The account is not authorized"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="404 - Not Found" type="Error">
+  The requested resource could not be found on the server.
+
+  **Common causes:**
+  - Invalid resource ID (merchant ID, payment ID, etc.)
+  - Resource has been deleted
+  - Incorrect API endpoint URL
+  - Typo in the request path
+
+  **How to fix:**
+  - Verify the resource ID exists and is correct
+  - Check the endpoint URL for typos
+  - Ensure you're using the correct HTTP method
+  - Confirm the resource hasn't been deleted
+
+  ```json
+  {
+    "errors": [{
+      "status": "404",
+      "title": "Not Found",
+      "detail": "The resource cannot be found"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="408 - Request Timeout" type="Error">
+  The server timed out waiting for the request.
+
+  **Common causes:**
+  - Slow network connection
+  - Large request payload
+  - Server processing delays
+
+  **How to fix:**
+  - Retry the request
+  - Check your network connection
+  - Reduce request payload size if possible
+  - Implement retry logic with exponential backoff
+
+  ```json
+  {
+    "errors": [{
+      "status": "408",
+      "title": "Request Timeout",
+      "detail": "The server timed out"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="409 - Conflict" type="Error">
+  The request conflicts with the current state of the server.
+
+  **Common causes:**
+  - Attempting to create a duplicate resource
+  - Race condition with concurrent requests
+  - Editing conflict with another user's changes
+
+  **How to fix:**
+  - Check if the resource already exists
+  - Implement optimistic locking if handling concurrent updates
+  - Retry the request with updated data
+
+  ```json
+  {
+    "errors": [{
+      "status": "409",
+      "title": "Conflict",
+      "detail": "There is an editing conflict"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="429 - Too Many Requests" type="Error">
+  The user has sent too many requests in a given amount of time (rate limiting).
+
+  **Common causes:**
+  - Exceeding API rate limits
+  - Making too many requests in a short time period
+  - Not implementing proper request throttling
+
+  **How to fix:**
+  - Implement exponential backoff
+  - Add delays between requests
+  - Cache responses when possible
+  - Contact support if you need higher rate limits
+
+  ```json
+  {
+    "errors": [{
+      "status": "429",
+      "title": "Too Many Requests",
+      "detail": "The user has sent too many requests"
+    }]
+  }
+  ```
+</ResponseField>
+
+### Server Error Codes (5xx)
+
+<ResponseField name="500 - Internal Server Error" type="Error">
+  The server encountered an unexpected condition that prevented it from fulfilling the request.
+
+  **Common causes:**
+  - Unexpected server-side error
+  - Database connection issues
+  - Unhandled exception in server code
+
+  **How to fix:**
+  - Retry the request after a short delay
+  - If the error persists, contact Digitzs support
+  - Check Digitzs status page for known issues
+
+  ```json
+  {
+    "errors": [{
+      "status": "500",
+      "title": "Internal Server Error",
+      "detail": "There was an unexpected error"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="501 - Not Implemented" type="Error">
+  The server does not recognize the request method or lacks the ability to fulfill it.
+
+  **Common causes:**
+  - Using an unsupported HTTP method
+  - Calling an endpoint that doesn't support the method
+  - Feature not yet implemented
+
+  **How to fix:**
+  - Verify you're using the correct HTTP method (GET, POST, PUT, DELETE)
+  - Check the API documentation for supported methods
+  - Ensure the endpoint supports the requested operation
+
+  ```json
+  {
+    "errors": [{
+      "status": "501",
+      "title": "Not Implemented",
+      "detail": "The request method not recognized"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="502 - Bad Gateway" type="Error">
+  The server received an invalid response from an upstream server.
+
+  **Common causes:**
+  - Payment processor connection issues
+  - Third-party service unavailable
+  - Network problems between servers
+
+  **How to fix:**
+  - Retry the request
+  - Wait a few moments and try again
+  - If the error persists, contact Digitzs support
+
+  ```json
+  {
+    "errors": [{
+      "status": "502",
+      "title": "Bad Gateway",
+      "detail": "The response is invalid"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="503 - Service Unavailable" type="Error">
+  The server is currently unable to handle the request due to temporary overload or maintenance.
+
+  **Common causes:**
+  - Scheduled maintenance
+  - Server overload
+  - Temporary service disruption
+
+  **How to fix:**
+  - Wait and retry the request
+  - Check Digitzs status page
+  - Implement retry logic with exponential backoff
+
+  ```json
+  {
+    "errors": [{
+      "status": "503",
+      "title": "Service Unavailable",
+      "detail": "The server is currently unavailable"
+    }]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="504 - Gateway Timeout" type="Error">
+  The server did not receive a timely response from an upstream server.
+
+  **Common causes:**
+  - Payment processor timeout
+  - Long-running operation exceeded timeout
+  - Network latency issues
+
+  **How to fix:**
+  - Retry the request
+  - Check payment status before retrying payment operations
+  - Contact support if timeouts persist
+
+  ```json
+  {
+    "errors": [{
+      "status": "504",
+      "title": "Gateway Timeout",
+      "detail": "A timely response was not received"
+    }]
+  }
+  ```
+</ResponseField>
+
+## Error Response Format
+
+All error responses from the Digitzs API follow a consistent JSON format:
+
+```json
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "The amount field is required",
+      "source": {
+        "pointer": "/data/attributes/transaction/amount"
+      }
+    }
+  ]
+}
+```
+
+### Error Object Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | HTTP status code as a string |
+| `title` | string | Short, human-readable summary of the error |
+| `detail` | string | Detailed explanation of the specific error |
+| `source` | object | Optional pointer to the source of the error in the request |
+| `source.pointer` | string | JSON Pointer to the field that caused the error |
+
+## Handling Errors
+
+### Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Log All Errors" icon="file-lines">
+    Log error responses with full details for debugging and monitoring
+  </Card>
+  <Card title="Implement Retry Logic" icon="rotate">
+    Retry transient errors (5xx, 408, 429) with exponential backoff
+  </Card>
+  <Card title="Parse Error Details" icon="magnifying-glass">
+    Read the error detail field for specific information about what went wrong
+  </Card>
+  <Card title="Handle Gracefully" icon="shield-check">
+    Display user-friendly error messages instead of raw error responses
+  </Card>
+</CardGroup>
+
+### Example Error Handling
+
+<CodeGroup>
+
+```javascript Node.js
+const axios = require('axios');
+
+async function makeAPIRequest(config) {
+  try {
+    const response = await axios(config);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      const status = error.response.status;
+      const errorData = error.response.data;
+
+      // Handle specific error codes
+      switch (status) {
+        case 401:
+          console.error('Authentication failed. Refreshing token...');
+          // Refresh token and retry
+          break;
+
+        case 404:
+          console.error('Resource not found:', errorData.errors[0].detail);
+          throw new Error('Resource not found');
+
+        case 429:
+          console.error('Rate limit exceeded. Retrying after delay...');
+          await delay(5000);
+          return makeAPIRequest(config); // Retry
+
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          console.error('Server error. Retrying...');
+          await delay(2000);
+          return makeAPIRequest(config); // Retry
+
+        default:
+          console.error('API Error:', errorData);
+          throw error;
+      }
+    } else {
+      // Network error or no response
+      console.error('Network error:', error.message);
+      throw error;
+    }
+  }
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+```python Python
+import requests
+import time
+from requests.exceptions import RequestException
+
+def make_api_request(method, url, **kwargs):
+    max_retries = 3
+    retry_delay = 2
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.request(method, url, **kwargs)
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_data = e.response.json()
+
+            # Handle specific error codes
+            if status_code == 401:
+                print("Authentication failed. Refreshing token...")
+                # Refresh token and retry
+                break
+
+            elif status_code == 404:
+                error_detail = error_data['errors'][0]['detail']
+                print(f"Resource not found: {error_detail}")
+                raise Exception("Resource not found")
+
+            elif status_code == 429:
+                print("Rate limit exceeded. Retrying after delay...")
+                time.sleep(5)
+                continue
+
+            elif status_code in [500, 502, 503, 504]:
+                if attempt < max_retries - 1:
+                    print(f"Server error. Retrying (attempt {attempt + 1})...")
+                    time.sleep(retry_delay * (attempt + 1))
+                    continue
+                else:
+                    print("Max retries reached for server error")
+                    raise
+
+            else:
+                print(f"API Error: {error_data}")
+                raise
+
+        except RequestException as e:
+            print(f"Network error: {str(e)}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                continue
+            raise
+
+# Usage
+try:
+    data = make_api_request('GET', 'https://api.digitzs.com/merchants')
+    print(data)
+except Exception as e:
+    print(f"Request failed: {str(e)}")
+```
+
+</CodeGroup>
+
+## Quick Reference Table
+
+| Status Code | Meaning | Action Required |
+|-------------|---------|----------------|
+| 200 | OK | Request successful |
+| 201 | Created | Resource created successfully |
+| 400 | Bad Request | Fix request parameters |
+| 401 | Unauthorized | Refresh authentication token |
+| 403 | Forbidden | Check account permissions |
+| 404 | Not Found | Verify resource ID |
+| 408 | Request Timeout | Retry the request |
+| 409 | Conflict | Resolve resource conflict |
+| 429 | Too Many Requests | Implement rate limiting |
+| 500 | Internal Server Error | Retry or contact support |
+| 501 | Not Implemented | Check HTTP method |
+| 502 | Bad Gateway | Retry the request |
+| 503 | Service Unavailable | Wait and retry |
+| 504 | Gateway Timeout | Retry the request |
+
+## Preventing Common Errors
+
+<AccordionGroup>
+  <Accordion title="Preventing 401 Errors" icon="key">
+    - Implement automatic token refresh before expiration
+    - Cache tokens and track their expiration time
+    - Use the correct Authorization header format: `Bearer {token}`
+    - Include all required headers: `Authorization`, `x-api-key`, and `appId`
+  </Accordion>
+
+  <Accordion title="Preventing 400 Errors" icon="check">
+    - Validate all input data before sending requests
+    - Use the correct data types (strings, numbers, etc.)
+    - Include all required fields
+    - Test with the API documentation examples
+  </Accordion>
+
+  <Accordion title="Preventing 429 Errors" icon="gauge">
+    - Implement request throttling in your application
+    - Cache responses when possible
+    - Use batch operations instead of individual requests
+    - Monitor your request rate
+  </Accordion>
+
+  <Accordion title="Handling 5xx Errors" icon="server">
+    - Implement exponential backoff for retries
+    - Set reasonable timeout values
+    - Log errors for monitoring
+    - Have a fallback strategy for critical operations
+  </Accordion>
+</AccordionGroup>
+
+## Need Help?
+
+<Card title="Contact Support" icon="headset" href="mailto:support@digitzs.com">
+  If you encounter persistent errors or need assistance troubleshooting, our support team is here to help.
+</Card>
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="Authentication Guide"
+    icon="key"
+    href="/authentication"
+  >
+    Learn how to properly authenticate your requests
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/overview"
+  >
+    Explore detailed endpoint documentation
+  </Card>
+</CardGroup>

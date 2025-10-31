@@ -1,0 +1,206 @@
+---
+title: "List Merchants"
+api: "GET /merchants"
+description: "Retrieve a list of merchant accounts"
+---
+
+## Endpoint
+
+```
+GET https://api.digitzs.com/merchants
+```
+
+## Overview
+
+Use this endpoint to retrieve a paginated list of all merchant accounts associated with your application.
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+
+## Query Parameters
+
+<ParamField query="limit" type="integer">
+  Number of results per page (default: 25, max: 100)
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Number of results to skip for pagination (default: 0)
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `active`, `pending`, `suspended`, `closed`
+</ParamField>
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/merchants?limit=25",
+    "next": "https://api.digitzs.com/merchants?limit=25&offset=25"
+  },
+  "data": [
+    {
+      "type": "merchants",
+      "id": "merchant_abc123",
+      "attributes": {
+        "accountName": "Acme Corporation",
+        "accountType": "business",
+        "status": "active",
+        "createdAt": "2024-01-15T10:00:00Z",
+        "email": "info@acme.com"
+      }
+    },
+    {
+      "type": "merchants",
+      "id": "merchant_xyz789",
+      "attributes": {
+        "accountName": "Bob's Shop",
+        "accountType": "personal",
+        "status": "active",
+        "createdAt": "2024-01-10T14:30:00Z",
+        "email": "bob@shop.com"
+      }
+    }
+  ],
+  "meta": {
+    "total": 156,
+    "limit": 25,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://api.digitzs.com/merchants?limit=25" \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id"
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function listMerchants(options = {}) {
+  const params = new URLSearchParams({
+    limit: options.limit || 25,
+    offset: options.offset || 0,
+    ...options.filters
+  });
+
+  const response = await axios.get(
+    `https://api.digitzs.com/merchants?${params}`,
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id'
+      }
+    }
+  );
+
+  console.log(`Retrieved ${response.data.data.length} merchants`);
+  return response.data;
+}
+
+// Get active merchants
+listMerchants({ filters: { status: 'active' } });
+```
+
+```python Python
+import requests
+
+def list_merchants(limit=25, offset=0, **filters):
+    url = "https://api.digitzs.com/merchants"
+
+    params = {
+        "limit": limit,
+        "offset": offset,
+        **filters
+    }
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id"
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+# Get active merchants
+list_merchants(status="active")
+```
+
+```php PHP
+<?php
+function listMerchants($options = []) {
+    $params = array_merge([
+        'limit' => 25,
+        'offset' => 0
+    ], $options);
+
+    $url = "https://api.digitzs.com/merchants?" . http_build_query($params);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    return json_decode(curl_exec($ch), true);
+}
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+def list_merchants(options = {})
+  params = {
+    limit: options[:limit] || 25,
+    offset: options[:offset] || 0
+  }.merge(options[:filters] || {})
+
+  uri = URI('https://api.digitzs.com/merchants')
+  uri.query = URI.encode_www_form(params)
+
+  request = Net::HTTP::Get.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  JSON.parse(response.body)
+end
+```
+
+</CodeGroup>
+
+## Next Steps
+
+<Card
+  title="Create Merchant"
+  icon="plus"
+  href="/api-reference/merchants/create"
+>
+  Create a new merchant account
+</Card>

@@ -1,0 +1,271 @@
+---
+title: "Refund Split Payment"
+api: "POST /payments"
+description: "Refund the split portion of a payment"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/payments
+```
+
+## Overview
+
+Use this endpoint to refund the split portion of a payment. This reverses the split amount that was distributed to a secondary merchant account.
+
+<Note>
+  This endpoint only refunds the split amount, not the entire transaction. To refund the full payment, use both this endpoint and the regular refund endpoint.
+</Note>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data.type" type="string" required>
+  Must be `"payments"`
+</ParamField>
+
+<ParamField body="data.attributes.paymentType" type="string" required>
+  Must be `"refundSplit"`
+</ParamField>
+
+<ParamField body="data.attributes.parentPaymentId" type="string" required>
+  The payment ID of the original split transaction
+</ParamField>
+
+<ParamField body="data.attributes.transaction" type="object" required>
+  Transaction details
+
+  <Expandable title="Properties">
+    <ParamField body="data.attributes.transaction.amount" type="string" required>
+      Amount to refund from the split in cents
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.currency" type="string" required>
+      Currency code (must match original)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "payments",
+    "attributes": {
+      "paymentType": "refundSplit",
+      "parentPaymentId": "pay_split_abc123",
+      "transaction": {
+        "amount": "100",
+        "currency": "USD"
+      }
+    }
+  }
+}
+```
+
+## Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_refund_split_xyz",
+    "attributes": {
+      "paymentType": "refundSplit",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "100",
+        "currency": "USD"
+      }
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/payments \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "payments",
+      "attributes": {
+        "paymentType": "refundSplit",
+        "parentPaymentId": "pay_split_abc123",
+        "transaction": {
+          "amount": "100",
+          "currency": "USD"
+        }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function refundSplit(paymentId, amount) {
+  const response = await axios.post(
+    'https://api.digitzs.com/payments',
+    {
+      data: {
+        type: 'payments',
+        attributes: {
+          paymentType: 'refundSplit',
+          parentPaymentId: paymentId,
+          transaction: {
+            amount: amount,
+            currency: 'USD'
+          }
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id'
+      }
+    }
+  );
+
+  return response.data;
+}
+```
+
+```python Python
+import requests
+
+def refund_split(payment_id, amount):
+    url = "https://api.digitzs.com/payments"
+
+    payload = {
+        "data": {
+            "type": "payments",
+            "attributes": {
+                "paymentType": "refundSplit",
+                "parentPaymentId": payment_id,
+                "transaction": {
+                    "amount": amount,
+                    "currency": "USD"
+                }
+            }
+        }
+    }
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id"
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+```
+
+```php PHP
+<?php
+function refundSplit($paymentId, $amount) {
+    $payload = json_encode([
+        "data" => [
+            "type" => "payments",
+            "attributes" => [
+                "paymentType" => "refundSplit",
+                "parentPaymentId" => $paymentId,
+                "transaction" => [
+                    "amount" => $amount,
+                    "currency" => "USD"
+                ]
+            ]
+        ]
+    ]);
+
+    $ch = curl_init("https://api.digitzs.com/payments");
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    return json_decode(curl_exec($ch), true);
+}
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+def refund_split(payment_id, amount)
+  uri = URI('https://api.digitzs.com/payments')
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+
+  request.body = {
+    data: {
+      type: 'payments',
+      attributes: {
+        paymentType: 'refundSplit',
+        parentPaymentId: payment_id,
+        transaction: {
+          amount: amount,
+          currency: 'USD'
+        }
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  JSON.parse(response.body)
+end
+```
+
+</CodeGroup>
+
+## Important Notes
+
+<Warning>
+  **Split Only:** This endpoint refunds only the split amount. To refund the entire transaction, you must also refund the primary payment separately.
+</Warning>
+
+<Tip>
+  **Full Refund Process:** For complete refunds of split payments: 1) Refund the split using this endpoint, 2) Refund the primary payment using the regular refund endpoint.
+</Tip>
+
+## Next Steps
+
+<Card
+  title="Refund Primary Payment"
+  icon="rotate-left"
+  href="/api-reference/payments/refund-void"
+>
+  Refund the primary portion of a split payment
+</Card>

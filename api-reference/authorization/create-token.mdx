@@ -1,0 +1,474 @@
+---
+title: "Create App Token"
+api: "POST /auth/token"
+description: "Generate a temporary access token for authenticating API requests"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/auth/token
+```
+
+## Overview
+
+Use this endpoint to generate a temporary access token (app token) using your app key. This token is required for all subsequent API calls and expires after one hour.
+
+<Warning>
+  **Tokens expire after one hour.** Implement token refresh logic to avoid authentication failures.
+</Warning>
+
+## Authentication
+
+This endpoint requires the `x-api-key` header but not a Bearer token.
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key from onboarding | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data" type="object" required>
+  Container for API data
+</ParamField>
+
+<ParamField body="data.type" type="string" required>
+  Must be `"auth"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Container for authentication attributes
+</ParamField>
+
+<ParamField body="data.attributes.appKey" type="string" required>
+  The app key obtained from `/auth/key` endpoint
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "auth",
+    "attributes": {
+      "appKey": "your-app-key-from-auth-key-endpoint"
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+<ResponseField name="links" type="object">
+  Contains URLs related to the resource
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Container for response data
+
+  <Expandable title="properties">
+    <ResponseField name="data.type" type="string">
+      Resource type - will be `"auth"`
+    </ResponseField>
+
+    <ResponseField name="data.id" type="string">
+      Your API key
+    </ResponseField>
+
+    <ResponseField name="data.attributes.appToken" type="string">
+      **The access token to use in your API requests.** This token expires after 1 hour.
+
+      Use this token in the `Authorization` header as: `Bearer {appToken}`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/auth/token"
+  },
+  "data": {
+    "type": "auth",
+    "id": "api-key-xyz",
+    "attributes": {
+      "appToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    }
+  }
+}
+```
+
+## Using the Token
+
+Include the token in all authenticated API requests:
+
+```bash
+curl -X GET https://api.digitzs.com/merchants \
+  -H "Authorization: Bearer your-app-token" \
+  -H "x-api-key: your-api-key" \
+  -H "appId: your-app-id"
+```
+
+<Tip>
+  The `Authorization` header must be formatted as `Bearer {token}` with a capital "B" and a space between "Bearer" and your token.
+</Tip>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/auth/token \
+  -H "x-api-key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "auth",
+      "attributes": {
+        "appKey": "your-app-key"
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function createAppToken(appKey) {
+  const response = await axios.post(
+    'https://api.digitzs.com/auth/token',
+    {
+      data: {
+        type: 'auth',
+        attributes: {
+          appKey: appKey
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  const appToken = response.data.data.attributes.appToken;
+  const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour from now
+
+  console.log('App Token:', appToken);
+  console.log('Expires at:', new Date(expiresAt).toISOString());
+
+  return { appToken, expiresAt };
+}
+
+// Usage
+createAppToken('your-app-key');
+```
+
+```python Python
+import requests
+from datetime import datetime, timedelta
+
+def create_app_token(app_key):
+    url = "https://api.digitzs.com/auth/token"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "auth",
+            "attributes": {
+                "appKey": app_key
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    app_token = response.json()["data"]["attributes"]["appToken"]
+    expires_at = datetime.now() + timedelta(hours=1)
+
+    print(f"App Token: {app_token}")
+    print(f"Expires at: {expires_at.isoformat()}")
+
+    return {
+        "app_token": app_token,
+        "expires_at": expires_at
+    }
+
+# Usage
+create_app_token("your-app-key")
+```
+
+```php PHP
+<?php
+
+function createAppToken($appKey) {
+    $url = "https://api.digitzs.com/auth/token";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "auth",
+            "attributes" => [
+                "appKey" => $appKey
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        $appToken = $data["data"]["attributes"]["appToken"];
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+        echo "App Token: " . $appToken . "\n";
+        echo "Expires at: " . $expiresAt . "\n";
+
+        return [
+            "appToken" => $appToken,
+            "expiresAt" => $expiresAt
+        ];
+    } else {
+        throw new Exception("Error creating app token: " . $response);
+    }
+}
+
+createAppToken("your-app-key");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_app_token(app_key)
+  uri = URI('https://api.digitzs.com/auth/token')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'auth',
+      attributes: {
+        appKey: app_key
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    app_token = data['data']['attributes']['appToken']
+    expires_at = Time.now + (60 * 60) # 1 hour from now
+
+    puts "App Token: #{app_token}"
+    puts "Expires at: #{expires_at.iso8601}"
+
+    {
+      app_token: app_token,
+      expires_at: expires_at
+    }
+  else
+    raise "Error creating app token: #{response.body}"
+  end
+end
+
+create_app_token('your-app-key')
+```
+
+</CodeGroup>
+
+## Token Management
+
+### Automatic Refresh
+
+Implement automatic token refresh logic to avoid authentication failures:
+
+```javascript
+class TokenManager {
+  constructor(apiKey, appKey) {
+    this.apiKey = apiKey;
+    this.appKey = appKey;
+    this.token = null;
+    this.expiresAt = null;
+  }
+
+  async getToken() {
+    // Refresh if token is missing or expires in less than 5 minutes
+    const refreshBuffer = 5 * 60 * 1000; // 5 minutes
+    const shouldRefresh = !this.token || Date.now() >= (this.expiresAt - refreshBuffer);
+
+    if (shouldRefresh) {
+      await this.refreshToken();
+    }
+
+    return this.token;
+  }
+
+  async refreshToken() {
+    const response = await axios.post(
+      'https://api.digitzs.com/auth/token',
+      {
+        data: {
+          type: 'auth',
+          attributes: {
+            appKey: this.appKey
+          }
+        }
+      },
+      {
+        headers: {
+          'x-api-key': this.apiKey,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    this.token = response.data.data.attributes.appToken;
+    this.expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour
+  }
+}
+
+// Usage
+const tokenManager = new TokenManager('your-api-key', 'your-app-key');
+const token = await tokenManager.getToken(); // Automatically refreshes if needed
+```
+
+## Error Responses
+
+<ResponseExample>
+
+```json 400 Bad Request
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "The appKey field is required"
+    }
+  ]
+}
+```
+
+```json 401 Unauthorized
+{
+  "errors": [
+    {
+      "status": "401",
+      "title": "Unauthorized",
+      "detail": "Invalid app key"
+    }
+  ]
+}
+```
+
+```json 403 Forbidden
+{
+  "errors": [
+    {
+      "status": "403",
+      "title": "Forbidden",
+      "detail": "The account is not authorized"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Error Scenarios
+
+<AccordionGroup>
+  <Accordion title="Invalid app key">
+    **Error:** 401 Unauthorized
+
+    **Solution:** Verify your app key is correct. If you've regenerated your app key, use the new one.
+  </Accordion>
+
+  <Accordion title="Expired app key">
+    **Error:** 401 Unauthorized
+
+    **Solution:** Generate a new app key using the `/auth/key` endpoint.
+  </Accordion>
+
+  <Accordion title="Token expired during use">
+    **Error:** 401 Unauthorized (from other endpoints)
+
+    **Solution:** Catch 401 errors and automatically refresh the token before retrying the request.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Cache Tokens" icon="clock">
+    Store and reuse tokens for their full 1-hour lifetime to minimize API calls
+  </Card>
+  <Card title="Proactive Refresh" icon="arrows-rotate">
+    Refresh tokens 5 minutes before expiration to avoid service interruptions
+  </Card>
+  <Card title="Handle 401 Errors" icon="shield-exclamation">
+    Implement automatic token refresh on 401 responses
+  </Card>
+  <Card title="Monitor Expiration" icon="stopwatch">
+    Track token expiration time and log refresh events
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Now that you have an access token, you can start making authenticated API requests:
+
+<CardGroup cols={3}>
+  <Card
+    title="Create Merchant"
+    icon="store"
+    href="/api-reference/merchants/create-merchant"
+  >
+    Set up merchant accounts
+  </Card>
+  <Card
+    title="Process Payment"
+    icon="credit-card"
+    href="/api-reference/payments/create-payment"
+  >
+    Accept payments
+  </Card>
+  <Card
+    title="List Merchants"
+    icon="list"
+    href="/api-reference/merchants/list-merchants"
+  >
+    Retrieve merchant data
+  </Card>
+</CardGroup>

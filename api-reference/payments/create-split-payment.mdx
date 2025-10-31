@@ -1,0 +1,653 @@
+---
+title: "Create Split Payment"
+api: "POST /payments"
+description: "Process a tokenized payment and split the proceeds between multiple merchant accounts"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/payments
+```
+
+## Overview
+
+Use this endpoint to process tokenized payments and automatically split the proceeds between two merchant accounts. This is ideal for marketplace and platform applications where you need to collect fees or distribute revenue.
+
+<Note>
+  Split payments require a TokenEx token from the embedded checkout and multiple merchant accounts configured for split processing.
+</Note>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key from onboarding | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data" type="object" required>
+  Container for API data
+</ParamField>
+
+<ParamField body="data.requestId" type="string">
+  UUID for idempotency to prevent duplicate transactions
+</ParamField>
+
+<ParamField body="data.type" type="string" required>
+  Must be `"payments"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Container for payment attributes
+</ParamField>
+
+<ParamField body="data.attributes.paymentType" type="string" required>
+  Must be `"tokenv3Split"` for split payments
+</ParamField>
+
+<ParamField body="data.attributes.merchantId" type="string" required>
+  Primary merchant account identifier (receives the net amount after split)
+</ParamField>
+
+<ParamField body="data.attributes.miscData" type="string">
+  Optional JSON string with additional metadata
+</ParamField>
+
+<ParamField body="data.attributes.token" type="object" required>
+  Tokenized payment method information
+
+  <Expandable title="Token object properties">
+    <ParamField body="data.attributes.token.tokenId" type="string" required>
+      TokenEx token ID from embedded checkout
+    </ParamField>
+
+    <ParamField body="data.attributes.token.holder" type="string" required>
+      Cardholder's name
+    </ParamField>
+
+    <ParamField body="data.attributes.token.expiry" type="string" required>
+      Card expiration in MMYY format
+    </ParamField>
+
+    <ParamField body="data.attributes.token.useAVS" type="boolean" required>
+      Whether to require AVS verification
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.transaction" type="object" required>
+  Transaction details
+
+  <Expandable title="Transaction properties">
+    <ParamField body="data.attributes.transaction.amount" type="string" required>
+      Total payment amount in cents
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.currency" type="string" required>
+      Currency code (e.g., "USD")
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.invoice" type="string" required>
+      Invoice or reference number
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.split" type="object" required>
+  Split configuration
+
+  <Expandable title="Split properties">
+    <ParamField body="data.attributes.split.merchantId" type="string" required>
+      Secondary merchant account to receive the split amount (typically your platform fee account)
+    </ParamField>
+
+    <ParamField body="data.attributes.split.amount" type="string" required>
+      Amount to split to secondary merchant in cents. Must be less than transaction amount.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.billingAddress" type="object">
+  Billing address information (optional but recommended)
+
+  <Expandable title="Address properties">
+    <ParamField body="data.attributes.billingAddress.line1" type="string">
+      Street address
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.line2" type="string">
+      Address line 2
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.city" type="string">
+      City
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.state" type="string">
+      State code
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.zip" type="string">
+      ZIP code
+    </ParamField>
+
+    <ParamField body="data.attributes.billingAddress.country" type="string">
+      Country code
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "payments",
+    "attributes": {
+      "paymentType": "tokenv3Split",
+      "merchantId": "merchant_primary_123",
+      "token": {
+        "tokenId": "tok_abc123xyz789",
+        "holder": "John Doe",
+        "expiry": "0229",
+        "useAVS": true
+      },
+      "transaction": {
+        "amount": "500",
+        "currency": "USD",
+        "invoice": "INV-2024-001"
+      },
+      "split": {
+        "merchantId": "merchant_platform_456",
+        "amount": "100"
+      },
+      "billingAddress": {
+        "line1": "123 Main Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94102",
+        "country": "USA"
+      }
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+<ResponseField name="data.id" type="string">
+  Unique payment transaction identifier
+</ResponseField>
+
+<ResponseField name="data.attributes.paymentType" type="string">
+  Payment type - `"card"`
+</ResponseField>
+
+<ResponseField name="data.attributes.transaction" type="object">
+  Transaction details including split information
+
+  <Expandable title="Transaction fields">
+    <ResponseField name="code" type="string">
+      Response code - `"0"` indicates success
+    </ResponseField>
+
+    <ResponseField name="message" type="string">
+      Transaction status message
+    </ResponseField>
+
+    <ResponseField name="amount" type="string">
+      Total transaction amount
+    </ResponseField>
+
+    <ResponseField name="authCode" type="string">
+      Authorization code
+    </ResponseField>
+
+    <ResponseField name="gross" type="string">
+      Gross amount charged
+    </ResponseField>
+
+    <ResponseField name="net" type="string">
+      Net amount to primary merchant (after split and fees)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_split_abc123",
+    "attributes": {
+      "paymentType": "card",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "500",
+        "invoice": "INV-2024-001",
+        "currency": "USD",
+        "authCode": "A11111",
+        "avsResult": "Y",
+        "gross": "500",
+        "net": "365",
+        "grossMinusNet": "135",
+        "fee": "35",
+        "rate": "2.95"
+      }
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/payments \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "payments",
+      "attributes": {
+        "paymentType": "tokenv3Split",
+        "merchantId": "merchant_primary_123",
+        "token": {
+          "tokenId": "tok_abc123xyz789",
+          "holder": "John Doe",
+          "expiry": "0229",
+          "useAVS": true
+        },
+        "transaction": {
+          "amount": "500",
+          "currency": "USD",
+          "invoice": "INV-2024-001"
+        },
+        "split": {
+          "merchantId": "merchant_platform_456",
+          "amount": "100"
+        },
+        "billingAddress": {
+          "line1": "123 Main Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "zip": "94102",
+          "country": "USA"
+        }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function createSplitPayment(tokenId, amount, splitAmount) {
+  const response = await axios.post(
+    'https://api.digitzs.com/payments',
+    {
+      data: {
+        type: 'payments',
+        attributes: {
+          paymentType: 'tokenv3Split',
+          merchantId: 'merchant_primary_123',
+          token: {
+            tokenId: tokenId,
+            holder: 'John Doe',
+            expiry: '0229',
+            useAVS: true
+          },
+          transaction: {
+            amount: amount,
+            currency: 'USD',
+            invoice: `INV-${Date.now()}`
+          },
+          split: {
+            merchantId: 'merchant_platform_456',
+            amount: splitAmount
+          },
+          billingAddress: {
+            line1: '123 Main Street',
+            city: 'San Francisco',
+            state: 'CA',
+            zip: '94102',
+            country: 'USA'
+          }
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  console.log('Payment ID:', response.data.data.id);
+  console.log('Net to Primary:', response.data.data.attributes.transaction.net);
+  return response.data;
+}
+
+// Process $5.00 payment with $1.00 platform fee
+createSplitPayment('tok_abc123xyz789', '500', '100');
+```
+
+```python Python
+import requests
+
+def create_split_payment(token_id, amount, split_amount):
+    url = "https://api.digitzs.com/payments"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "payments",
+            "attributes": {
+                "paymentType": "tokenv3Split",
+                "merchantId": "merchant_primary_123",
+                "token": {
+                    "tokenId": token_id,
+                    "holder": "John Doe",
+                    "expiry": "0229",
+                    "useAVS": True
+                },
+                "transaction": {
+                    "amount": amount,
+                    "currency": "USD",
+                    "invoice": f"INV-{int(time.time())}"
+                },
+                "split": {
+                    "merchantId": "merchant_platform_456",
+                    "amount": split_amount
+                },
+                "billingAddress": {
+                    "line1": "123 Main Street",
+                    "city": "San Francisco",
+                    "state": "CA",
+                    "zip": "94102",
+                    "country": "USA"
+                }
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    payment_id = response.json()["data"]["id"]
+    net = response.json()["data"]["attributes"]["transaction"]["net"]
+    print(f"Payment ID: {payment_id}")
+    print(f"Net to Primary: ${float(net)/100:.2f}")
+    return response.json()
+
+# Process $5.00 payment with $1.00 platform fee
+create_split_payment("tok_abc123xyz789", "500", "100")
+```
+
+```php PHP
+<?php
+
+function createSplitPayment($tokenId, $amount, $splitAmount) {
+    $url = "https://api.digitzs.com/payments";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "payments",
+            "attributes" => [
+                "paymentType" => "tokenv3Split",
+                "merchantId" => "merchant_primary_123",
+                "token" => [
+                    "tokenId" => $tokenId,
+                    "holder" => "John Doe",
+                    "expiry" => "0229",
+                    "useAVS" => true
+                ],
+                "transaction" => [
+                    "amount" => $amount,
+                    "currency" => "USD",
+                    "invoice" => "INV-" . time()
+                ],
+                "split" => [
+                    "merchantId" => "merchant_platform_456",
+                    "amount" => $splitAmount
+                ],
+                "billingAddress" => [
+                    "line1" => "123 Main Street",
+                    "city" => "San Francisco",
+                    "state" => "CA",
+                    "zip" => "94102",
+                    "country" => "USA"
+                ]
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        echo "Payment ID: " . $data["data"]["id"] . "\n";
+        echo "Net to Primary: $" . ($data["data"]["attributes"]["transaction"]["net"] / 100) . "\n";
+        return $data;
+    } else {
+        throw new Exception("Error: " . $response);
+    }
+}
+
+// Process $5.00 payment with $1.00 platform fee
+createSplitPayment("tok_abc123xyz789", "500", "100");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_split_payment(token_id, amount, split_amount)
+  uri = URI('https://api.digitzs.com/payments')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'payments',
+      attributes: {
+        paymentType: 'tokenv3Split',
+        merchantId: 'merchant_primary_123',
+        token: {
+          tokenId: token_id,
+          holder: 'John Doe',
+          expiry: '0229',
+          useAVS: true
+        },
+        transaction: {
+          amount: amount,
+          currency: 'USD',
+          invoice: "INV-#{Time.now.to_i}"
+        },
+        split: {
+          merchantId: 'merchant_platform_456',
+          amount: split_amount
+        },
+        billingAddress: {
+          line1: '123 Main Street',
+          city: 'San Francisco',
+          state: 'CA',
+          zip: '94102',
+          country: 'USA'
+        }
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    puts "Payment ID: #{data['data']['id']}"
+    puts "Net to Primary: $#{data['data']['attributes']['transaction']['net'].to_f / 100}"
+    data
+  else
+    raise "Error: #{response.body}"
+  end
+end
+
+# Process $5.00 payment with $1.00 platform fee
+create_split_payment('tok_abc123xyz789', '500', '100')
+```
+
+</CodeGroup>
+
+## Understanding Split Payments
+
+Split payments automatically distribute transaction proceeds:
+
+1. **Customer pays total amount:** e.g., $5.00
+2. **Platform fee is split:** e.g., $1.00 goes to secondary merchant
+3. **Processing fees applied:** Standard 2.9% + $0.30
+4. **Primary merchant receives net:** Remaining amount after split and fees
+
+### Calculation Example
+
+For a $5.00 transaction with $1.00 split:
+- **Gross:** $5.00
+- **Split to secondary merchant:** $1.00
+- **Processing fee on $5.00:** $0.45 (2.9% + $0.30)
+- **Net to primary merchant:** $3.55
+
+## Error Responses
+
+<ResponseExample>
+
+```json 400 Bad Request - Split amount exceeds total
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "Split amount must be less than transaction amount"
+    }
+  ]
+}
+```
+
+```json 403 Forbidden - Merchant not authorized for splits
+{
+  "errors": [
+    {
+      "status": "403",
+      "title": "Forbidden",
+      "detail": "Merchant account not configured for split payments"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Error Scenarios
+
+<AccordionGroup>
+  <Accordion title="Split amount exceeds transaction amount">
+    **Error:** 400 Bad Request
+
+    **Solution:** Ensure split.amount is less than transaction.amount. The split cannot be equal to or greater than the total.
+  </Accordion>
+
+  <Accordion title="Invalid secondary merchant">
+    **Error:** 400 Bad Request
+
+    **Solution:** Verify the secondary merchantId exists and is configured for receiving split payments.
+  </Accordion>
+
+  <Accordion title="Merchant not configured for splits">
+    **Error:** 403 Forbidden
+
+    **Solution:** Contact Digitzs support to enable split payment functionality for your merchant accounts.
+  </Accordion>
+</AccordionGroup>
+
+## Important Notes
+
+<Warning>
+  **Pre-configuration Required:** Both merchant accounts must be configured for split payments. Contact Digitzs support to enable this feature.
+</Warning>
+
+<Note>
+  **Processing Fees:** Standard processing fees (2.9% + $0.30) apply to the gross transaction amount, not the split amount.
+</Note>
+
+<Tip>
+  **Use Cases:** Split payments are ideal for marketplaces, platforms, and applications where you need to collect platform fees or distribute revenue to vendors.
+</Tip>
+
+## Best Practices
+
+1. **Validate Split Amounts:** Ensure split amount is reasonable and less than total transaction amount
+2. **Track Both Accounts:** Monitor transactions in both primary and secondary merchant accounts
+3. **Clear Communication:** Inform users about how payment will be distributed
+4. **Handle Refunds Properly:** Use split refund endpoint to properly reverse split transactions
+5. **Test Thoroughly:** Verify split amounts are correctly distributed in your test environment
+
+## Next Steps
+
+<Card
+  title="Create Second Split"
+  icon="arrows-split-up-and-left"
+  href="/api-reference/payments/create-second-split"
+>
+  Add an additional split to an existing transaction
+</Card>
+
+<Card
+  title="Refund Split Payment"
+  icon="rotate-left"
+  href="/api-reference/payments/refund-split"
+>
+  Learn how to refund split payments
+</Card>

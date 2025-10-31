@@ -1,0 +1,313 @@
+---
+title: "API Reference"
+description: "Complete reference documentation for the Digitzs API"
+---
+
+## Base URL
+
+All API requests should be made to:
+
+```
+https://api.digitzs.com
+```
+
+<Info>
+  The Digitzs API follows REST principles and returns JSON-formatted responses.
+</Info>
+
+## API Sections
+
+The Digitzs API is organized into three main sections:
+
+<CardGroup cols={3}>
+  <Card
+    title="Authorization"
+    icon="lock"
+    href="/api-reference/authorization/overview"
+  >
+    Generate API keys and access tokens
+  </Card>
+  <Card
+    title="Payments"
+    icon="credit-card"
+    href="/api-reference/payments/overview"
+  >
+    Process and manage payment transactions
+  </Card>
+  <Card
+    title="Merchants"
+    icon="store"
+    href="/api-reference/merchants/overview"
+  >
+    Create and manage merchant accounts
+  </Card>
+</CardGroup>
+
+## Authentication
+
+All API requests (except authorization endpoints) require authentication using three headers:
+
+| Header | Description | Required For |
+|--------|-------------|--------------|
+| `x-api-key` | Your API key from onboarding | All endpoints |
+| `Authorization` | Bearer token format: `Bearer {appToken}` | All endpoints except `/auth/key` |
+| `appId` | Your application ID from onboarding | Payment and merchant endpoints |
+| `Content-Type` | Should be `application/json` | All POST/PUT requests |
+
+<Warning>
+  App tokens expire after one hour. Implement token refresh logic in your application. See the [Authentication Guide](/authentication) for details.
+</Warning>
+
+## Request Format
+
+### JSON API Specification
+
+The Digitzs API follows the JSON API specification for request and response formatting:
+
+```json
+{
+  "data": {
+    "type": "resource-type",
+    "id": "resource-id",
+    "attributes": {
+      "field1": "value1",
+      "field2": "value2"
+    }
+  }
+}
+```
+
+### Key Concepts
+
+<AccordionGroup>
+  <Accordion title="Data Object" icon="cube">
+    All requests and responses wrap data in a `data` object that contains the resource type, ID, and attributes.
+  </Accordion>
+
+  <Accordion title="Type Field" icon="tag">
+    The `type` field identifies the resource type (e.g., "auth", "payments", "merchants").
+  </Accordion>
+
+  <Accordion title="Attributes Object" icon="list">
+    The `attributes` object contains all the resource-specific data and parameters.
+  </Accordion>
+
+  <Accordion title="Links Object" icon="link">
+    Responses include a `links` object with URLs related to the resource.
+  </Accordion>
+</AccordionGroup>
+
+## Response Format
+
+### Successful Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments/123"
+  },
+  "data": {
+    "type": "payments",
+    "id": "payment-123",
+    "attributes": {
+      "paymentType": "card",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "1000",
+        "currency": "USD"
+      }
+    }
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "The amount field is required",
+      "source": {
+        "pointer": "/data/attributes/transaction/amount"
+      }
+    }
+  ]
+}
+```
+
+## Common Data Types
+
+### Amounts
+
+All monetary amounts are specified in cents (smallest currency unit).
+
+<CodeGroup>
+
+```json Example
+{
+  "amount": "1000"  // Represents $10.00
+}
+```
+
+```javascript JavaScript
+const amountInDollars = 10.00;
+const amountInCents = Math.round(amountInDollars * 100).toString();
+// Result: "1000"
+```
+
+```python Python
+amount_in_dollars = 10.00
+amount_in_cents = str(int(amount_in_dollars * 100))
+# Result: "1000"
+```
+
+</CodeGroup>
+
+### Currency Codes
+
+Use three-character ISO 4217 currency codes:
+
+| Code | Currency |
+|------|----------|
+| `USD` | US Dollar |
+| `EUR` | Euro |
+| `GBP` | British Pound |
+| `CAD` | Canadian Dollar |
+
+### Dates and Times
+
+All timestamps are returned in ISO 8601 format:
+
+```
+2024-01-15T14:30:00Z
+```
+
+## Rate Limiting
+
+<Note>
+  The Digitzs API implements rate limiting to ensure fair usage and system stability.
+</Note>
+
+If you exceed rate limits, you'll receive a `429 Too Many Requests` error. Implement exponential backoff in your retry logic:
+
+```javascript
+async function makeRequestWithRetry(requestFn, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await requestFn();
+    } catch (error) {
+      if (error.response?.status === 429 && attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## Idempotency
+
+To prevent duplicate transactions, you can include a `requestId` in your payment requests:
+
+```json
+{
+  "data": {
+    "requestId": "unique-uuid-v4",
+    "type": "payments",
+    "attributes": {
+      ...
+    }
+  }
+}
+```
+
+<Tip>
+  Use UUID v4 format for request IDs. The same request ID will return the original response if submitted multiple times.
+</Tip>
+
+## Testing
+
+### Test Mode
+
+Use test credentials provided during onboarding to test your integration without processing real transactions.
+
+### Test Cards
+
+For testing card payments, use these test card numbers:
+
+| Card Number | Result |
+|-------------|--------|
+| `4111111111111111` | Successful charge |
+| `4000000000000002` | Card declined |
+| `4000000000009995` | Insufficient funds |
+
+### Test ACH
+
+For testing ACH payments, use any valid routing number (must be real) with test account numbers:
+
+| Account Number | Result |
+|----------------|--------|
+| `1234567` | Successful payment |
+| `9876543` | Insufficient funds |
+
+## Webhooks
+
+<Info>
+  Webhook support is coming soon. Check back for updates on event notifications.
+</Info>
+
+## SDK and Libraries
+
+<CardGroup cols={2}>
+  <Card title="Node.js Example" icon="node-js">
+    Complete examples available in the authentication guide
+  </Card>
+  <Card title="Python Example" icon="python">
+    Complete examples available in the authentication guide
+  </Card>
+  <Card title="PHP Example" icon="php">
+    Complete examples available in the authentication guide
+  </Card>
+  <Card title="Ruby Example" icon="gem">
+    Complete examples available in the authentication guide
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<Steps>
+  <Step title="Set Up Authentication">
+    Follow the [authentication guide](/authentication) to generate your access tokens
+  </Step>
+  <Step title="Create a Merchant">
+    Use the [merchant endpoints](/api-reference/merchants/overview) to set up accounts
+  </Step>
+  <Step title="Process Payments">
+    Start accepting payments with the [payment endpoints](/api-reference/payments/overview)
+  </Step>
+</Steps>
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="Error Codes"
+    icon="triangle-exclamation"
+    href="/error-codes"
+  >
+    Complete error code reference
+  </Card>
+  <Card
+    title="API User Manual"
+    icon="book"
+    href="https://digitzs.com/wp-content/uploads/2019/04/API-User-Manual.pdf"
+  >
+    Download the complete manual
+  </Card>
+</CardGroup>

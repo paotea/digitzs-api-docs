@@ -1,0 +1,935 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate and authorize your requests to the Digitzs API"
+---
+
+## Overview
+
+The Digitzs API uses a two-step authentication process to ensure secure access to your merchant services:
+
+1. **Authentication** - Verifying your identity
+2. **Authorization** - Granting access to API resources
+
+<Info>
+  All API requests require proper authentication headers. Tokens expire after one hour and must be refreshed.
+</Info>
+
+## Before You Begin
+
+You will need the following credentials provided during onboarding:
+
+<CardGroup cols={2}>
+  <Card title="API Key" icon="key">
+    Your unique API key (`x-api-key`)
+  </Card>
+  <Card title="Application ID" icon="fingerprint">
+    Your application identifier (`appId`)
+  </Card>
+</CardGroup>
+
+## Authentication Flow
+
+<Steps>
+  <Step title="Generate App Key">
+    Create an app key using your API key and application ID
+  </Step>
+  <Step title="Create App Token">
+    Use the app key to generate a temporary access token
+  </Step>
+  <Step title="Make Authenticated Requests">
+    Include the token in your API requests
+  </Step>
+</Steps>
+
+## Step 1: Generate App Key
+
+Create an app key that will be used to generate access tokens.
+
+<Warning>
+  Creating a new app key renders the old key unusable. Store your app key securely.
+</Warning>
+
+### Endpoint
+
+```
+POST /auth/key
+```
+
+### Request Headers
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `x-api-key` | Your API key | Provided during onboarding |
+| `Content-Type` | `application/json` | Standard REST header |
+
+### Request Body
+
+```json
+{
+  "data": {
+    "type": "auth",
+    "attributes": {
+      "appId": "your-application-id"
+    }
+  }
+}
+```
+
+### Request Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `data` | object | Yes | Container for API data |
+| `data.type` | string | Yes | Must be "auth" |
+| `data.attributes` | object | Yes | Container for authentication attributes |
+| `data.attributes.appId` | string | Yes | Your application ID from onboarding |
+
+### Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/auth/key"
+  },
+  "data": {
+    "type": "auth",
+    "id": "your-api-key",
+    "attributes": {
+      "appKey": "generated-app-key"
+    }
+  }
+}
+```
+
+### Response Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `data.id` | string | Your API key (same as request header) |
+| `data.attributes.appKey` | string | Generated app key for token creation |
+
+### Code Examples
+
+<CodeGroup>
+
+```javascript Node.js
+const axios = require('axios');
+
+const createAppKey = async () => {
+  try {
+    const response = await axios.post(
+      'https://api.digitzs.com/auth/key',
+      {
+        data: {
+          type: 'auth',
+          attributes: {
+            appId: 'your-application-id'
+          }
+        }
+      },
+      {
+        headers: {
+          'x-api-key': 'your-api-key',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const appKey = response.data.data.attributes.appKey;
+    console.log('App Key:', appKey);
+    return appKey;
+  } catch (error) {
+    console.error('Error creating app key:', error.response.data);
+  }
+};
+```
+
+```python Python
+import requests
+import json
+
+def create_app_key():
+    url = "https://api.digitzs.com/auth/key"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "auth",
+            "attributes": {
+                "appId": "your-application-id"
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 201:
+        app_key = response.json()["data"]["attributes"]["appKey"]
+        print(f"App Key: {app_key}")
+        return app_key
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+
+create_app_key()
+```
+
+```php PHP
+<?php
+
+function createAppKey() {
+    $url = "https://api.digitzs.com/auth/key";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "auth",
+            "attributes" => [
+                "appId" => "your-application-id"
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        $appKey = $data["data"]["attributes"]["appKey"];
+        echo "App Key: " . $appKey . "\n";
+        return $appKey;
+    }
+}
+
+createAppKey();
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_app_key
+  uri = URI('https://api.digitzs.com/auth/key')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'auth',
+      attributes: {
+        appId: 'your-application-id'
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    app_key = data['data']['attributes']['appKey']
+    puts "App Key: #{app_key}"
+    app_key
+  end
+end
+
+create_app_key
+```
+
+</CodeGroup>
+
+## Step 2: Create App Token
+
+Generate a temporary access token using your app key. This token is required for all subsequent API calls.
+
+<Warning>
+  **Tokens expire after one hour.** You must generate a new token when the previous one expires.
+</Warning>
+
+### Endpoint
+
+```
+POST /auth/token
+```
+
+### Request Headers
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `x-api-key` | Your API key | Provided during onboarding |
+| `Content-Type` | `application/json` | Standard REST header |
+
+### Request Body
+
+```json
+{
+  "data": {
+    "type": "auth",
+    "attributes": {
+      "appKey": "your-app-key-from-step-1"
+    }
+  }
+}
+```
+
+### Request Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `data` | object | Yes | Container for API data |
+| `data.type` | string | Yes | Must be "auth" |
+| `data.attributes` | object | Yes | Container for authentication attributes |
+| `data.attributes.appKey` | string | Yes | The app key from Step 1 |
+
+### Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/auth/token"
+  },
+  "data": {
+    "type": "auth",
+    "id": "your-api-key",
+    "attributes": {
+      "appToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+  }
+}
+```
+
+### Response Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `data.id` | string | Your API key |
+| `data.attributes.appToken` | string | The access token to use in Authorization header |
+
+### Code Examples
+
+<CodeGroup>
+
+```javascript Node.js
+const axios = require('axios');
+
+const createAppToken = async (appKey) => {
+  try {
+    const response = await axios.post(
+      'https://api.digitzs.com/auth/token',
+      {
+        data: {
+          type: 'auth',
+          attributes: {
+            appKey: appKey
+          }
+        }
+      },
+      {
+        headers: {
+          'x-api-key': 'your-api-key',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const appToken = response.data.data.attributes.appToken;
+    console.log('App Token:', appToken);
+    return appToken;
+  } catch (error) {
+    console.error('Error creating app token:', error.response.data);
+  }
+};
+```
+
+```python Python
+import requests
+import json
+
+def create_app_token(app_key):
+    url = "https://api.digitzs.com/auth/token"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "auth",
+            "attributes": {
+                "appKey": app_key
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 201:
+        app_token = response.json()["data"]["attributes"]["appToken"]
+        print(f"App Token: {app_token}")
+        return app_token
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+
+app_token = create_app_token("your-app-key")
+```
+
+```php PHP
+<?php
+
+function createAppToken($appKey) {
+    $url = "https://api.digitzs.com/auth/token";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "auth",
+            "attributes" => [
+                "appKey" => $appKey
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        $appToken = $data["data"]["attributes"]["appToken"];
+        echo "App Token: " . $appToken . "\n";
+        return $appToken;
+    }
+}
+
+$appToken = createAppToken("your-app-key");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_app_token(app_key)
+  uri = URI('https://api.digitzs.com/auth/token')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'auth',
+      attributes: {
+        appKey: app_key
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    app_token = data['data']['attributes']['appToken']
+    puts "App Token: #{app_token}"
+    app_token
+  end
+end
+
+app_token = create_app_token('your-app-key')
+```
+
+</CodeGroup>
+
+## Step 3: Making Authenticated Requests
+
+Once you have an app token, include it in all API requests using the required headers.
+
+### Required Headers for API Calls
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `Authorization` | `Bearer {appToken}` | Your access token with "Bearer " prefix |
+| `x-api-key` | Your API key | Your API key from onboarding |
+| `appId` | Your application ID | Your application ID from onboarding |
+| `Content-Type` | `application/json` | Standard REST header |
+
+<Warning>
+  The `Authorization` header value **must** be formatted as `Bearer {token}` with:
+  - A capital "B" in "Bearer"
+  - A space between "Bearer" and your token
+</Warning>
+
+### Example Authenticated Request
+
+<CodeGroup>
+
+```javascript Node.js
+const axios = require('axios');
+
+const makeAuthenticatedRequest = async (appToken) => {
+  try {
+    const response = await axios.get(
+      'https://api.digitzs.com/merchants',
+      {
+        headers: {
+          'Authorization': `Bearer ${appToken}`,
+          'x-api-key': 'your-api-key',
+          'appId': 'your-application-id',
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log('Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error:', error.response.data);
+  }
+};
+```
+
+```python Python
+import requests
+
+def make_authenticated_request(app_token):
+    url = "https://api.digitzs.com/merchants"
+
+    headers = {
+        "Authorization": f"Bearer {app_token}",
+        "x-api-key": "your-api-key",
+        "appId": "your-application-id",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        print("Response:", response.json())
+        return response.json()
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+
+make_authenticated_request("your-app-token")
+```
+
+```php PHP
+<?php
+
+function makeAuthenticatedRequest($appToken) {
+    $url = "https://api.digitzs.com/merchants";
+
+    $headers = [
+        "Authorization: Bearer " . $appToken,
+        "x-api-key: your-api-key",
+        "appId: your-application-id",
+        "Content-Type: application/json"
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 200) {
+        $data = json_decode($response, true);
+        print_r($data);
+        return $data;
+    }
+}
+
+makeAuthenticatedRequest("your-app-token");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def make_authenticated_request(app_token)
+  uri = URI('https://api.digitzs.com/merchants')
+
+  request = Net::HTTP::Get.new(uri)
+  request['Authorization'] = "Bearer #{app_token}"
+  request['x-api-key'] = 'your-api-key'
+  request['appId'] = 'your-application-id'
+  request['Content-Type'] = 'application/json'
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '200'
+    data = JSON.parse(response.body)
+    puts data
+    data
+  end
+end
+
+make_authenticated_request('your-app-token')
+```
+
+</CodeGroup>
+
+## Token Management
+
+### Token Expiration
+
+App tokens expire after **one hour** from creation. When a token expires, you will receive a `401 Unauthorized` error.
+
+### Refreshing Tokens
+
+To refresh an expired token, simply call the `/auth/token` endpoint again with your app key. You do not need to regenerate the app key unless you want to invalidate all existing tokens.
+
+### Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Store Securely" icon="vault">
+    Store your API key and app key securely using environment variables or secret management services
+  </Card>
+  <Card title="Implement Retry Logic" icon="rotate">
+    Automatically refresh tokens when you receive a 401 error
+  </Card>
+  <Card title="Cache Tokens" icon="clock">
+    Cache tokens and reuse them until they expire to reduce API calls
+  </Card>
+  <Card title="Monitor Expiration" icon="clock-rotate-left">
+    Track token creation time and proactively refresh before expiration
+  </Card>
+</CardGroup>
+
+## Complete Authentication Example
+
+Here's a complete example that handles the full authentication flow:
+
+<CodeGroup>
+
+```javascript Node.js
+const axios = require('axios');
+
+class DigitzsAuth {
+  constructor(apiKey, appId) {
+    this.apiKey = apiKey;
+    this.appId = appId;
+    this.appKey = null;
+    this.appToken = null;
+    this.tokenExpiry = null;
+    this.baseURL = 'https://api.digitzs.com';
+  }
+
+  async initialize() {
+    this.appKey = await this.createAppKey();
+    await this.refreshToken();
+  }
+
+  async createAppKey() {
+    const response = await axios.post(
+      `${this.baseURL}/auth/key`,
+      {
+        data: {
+          type: 'auth',
+          attributes: { appId: this.appId }
+        }
+      },
+      {
+        headers: {
+          'x-api-key': this.apiKey,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data.data.attributes.appKey;
+  }
+
+  async refreshToken() {
+    const response = await axios.post(
+      `${this.baseURL}/auth/token`,
+      {
+        data: {
+          type: 'auth',
+          attributes: { appKey: this.appKey }
+        }
+      },
+      {
+        headers: {
+          'x-api-key': this.apiKey,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    this.appToken = response.data.data.attributes.appToken;
+    this.tokenExpiry = Date.now() + (55 * 60 * 1000); // 55 minutes
+  }
+
+  async getHeaders() {
+    // Check if token needs refresh (5 min buffer)
+    if (!this.appToken || Date.now() >= this.tokenExpiry) {
+      await this.refreshToken();
+    }
+
+    return {
+      'Authorization': `Bearer ${this.appToken}`,
+      'x-api-key': this.apiKey,
+      'appId': this.appId,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  async request(method, endpoint, data = null) {
+    const headers = await this.getHeaders();
+    const config = {
+      method,
+      url: `${this.baseURL}${endpoint}`,
+      headers
+    };
+
+    if (data) {
+      config.data = data;
+    }
+
+    try {
+      const response = await axios(config);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        // Token expired, refresh and retry
+        await this.refreshToken();
+        headers.Authorization = `Bearer ${this.appToken}`;
+        config.headers = headers;
+        const retryResponse = await axios(config);
+        return retryResponse.data;
+      }
+      throw error;
+    }
+  }
+}
+
+// Usage
+(async () => {
+  const auth = new DigitzsAuth('your-api-key', 'your-app-id');
+  await auth.initialize();
+
+  // Now you can make requests
+  const merchants = await auth.request('GET', '/merchants');
+  console.log(merchants);
+})();
+```
+
+```python Python
+import requests
+import time
+from datetime import datetime, timedelta
+
+class DigitzsAuth:
+    def __init__(self, api_key, app_id):
+        self.api_key = api_key
+        self.app_id = app_id
+        self.app_key = None
+        self.app_token = None
+        self.token_expiry = None
+        self.base_url = 'https://api.digitzs.com'
+
+    def initialize(self):
+        self.app_key = self.create_app_key()
+        self.refresh_token()
+
+    def create_app_key(self):
+        url = f"{self.base_url}/auth/key"
+        headers = {
+            "x-api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "data": {
+                "type": "auth",
+                "attributes": {
+                    "appId": self.app_id
+                }
+            }
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()["data"]["attributes"]["appKey"]
+
+    def refresh_token(self):
+        url = f"{self.base_url}/auth/token"
+        headers = {
+            "x-api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "data": {
+                "type": "auth",
+                "attributes": {
+                    "appKey": self.app_key
+                }
+            }
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+
+        self.app_token = response.json()["data"]["attributes"]["appToken"]
+        self.token_expiry = datetime.now() + timedelta(minutes=55)
+
+    def get_headers(self):
+        # Check if token needs refresh (5 min buffer)
+        if not self.app_token or datetime.now() >= self.token_expiry:
+            self.refresh_token()
+
+        return {
+            "Authorization": f"Bearer {self.app_token}",
+            "x-api-key": self.api_key,
+            "appId": self.app_id,
+            "Content-Type": "application/json"
+        }
+
+    def request(self, method, endpoint, data=None):
+        headers = self.get_headers()
+        url = f"{self.base_url}{endpoint}"
+
+        try:
+            response = requests.request(method, url, headers=headers, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                # Token expired, refresh and retry
+                self.refresh_token()
+                headers = self.get_headers()
+                response = requests.request(method, url, headers=headers, json=data)
+                response.raise_for_status()
+                return response.json()
+            raise
+
+# Usage
+auth = DigitzsAuth('your-api-key', 'your-app-id')
+auth.initialize()
+
+# Now you can make requests
+merchants = auth.request('GET', '/merchants')
+print(merchants)
+```
+
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="401 Unauthorized Error">
+    This error occurs when:
+    - Your token has expired (tokens last 1 hour)
+    - The Authorization header is not properly formatted
+    - Your API key or app ID is incorrect
+
+    **Solution:** Generate a new token and ensure the Authorization header uses the format `Bearer {token}` with a capital "B" and a space.
+  </Accordion>
+
+  <Accordion title="403 Forbidden Error">
+    This error indicates:
+    - Your account is not authorized to access the requested resource
+    - Your API key has been revoked or suspended
+
+    **Solution:** Contact Digitzs support to verify your account status and permissions.
+  </Accordion>
+
+  <Accordion title="Invalid App Key">
+    If you receive an error when creating a token:
+    - Your app key may have been regenerated
+    - The app key was not properly stored from Step 1
+
+    **Solution:** Regenerate the app key using `/auth/key` and try again.
+  </Accordion>
+
+  <Accordion title="Missing Headers">
+    All authenticated requests require three headers:
+    - `Authorization: Bearer {token}`
+    - `x-api-key: {your-api-key}`
+    - `appId: {your-app-id}`
+
+    **Solution:** Ensure all three headers are included in every request.
+  </Accordion>
+</AccordionGroup>
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Never Expose Keys" icon="eye-slash">
+    Never commit API keys or tokens to version control or expose them in client-side code
+  </Card>
+  <Card title="Use Environment Variables" icon="gear">
+    Store credentials in environment variables or secure secret management systems
+  </Card>
+  <Card title="Rotate Keys Regularly" icon="arrows-rotate">
+    Periodically regenerate your app keys to maintain security
+  </Card>
+  <Card title="Use HTTPS Only" icon="lock">
+    Always make requests over HTTPS to encrypt data in transit
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Now that you understand authentication, you're ready to start using the API:
+
+<CardGroup cols={3}>
+  <Card
+    title="Create a Merchant"
+    icon="store"
+    href="/api-reference/merchants/create-merchant"
+  >
+    Set up merchant accounts
+  </Card>
+  <Card
+    title="Process Payments"
+    icon="credit-card"
+    href="/api-reference/payments/create-payment"
+  >
+    Start accepting payments
+  </Card>
+  <Card
+    title="View Error Codes"
+    icon="triangle-exclamation"
+    href="/error-codes"
+  >
+    Handle errors properly
+  </Card>
+</CardGroup>

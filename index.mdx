@@ -1,97 +1,158 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Digitzs API Documentation"
+description: "Build merchant services into your app with a quick, painless, and secure API"
 ---
 
-## Setting up
+## Welcome to Digitzs API
 
-Get your documentation site up and running in minutes.
+The Digitzs API provides a comprehensive solution for integrating merchant services directly into your application. Enable your users to open merchant accounts in real-time and start processing transactions immediately—all without leaving your platform.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get started with the Digitzs API in minutes
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Authentication"
+    icon="key"
+    href="/authentication"
   >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Learn how to authenticate your API requests
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
+    title="API Reference"
     icon="code"
-    href="/essentials/code"
+    href="/api-reference/overview"
   >
-    Add sample code to demonstrate how to use your product.
+    Explore all available endpoints and methods
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="Error Codes"
+    icon="triangle-exclamation"
+    href="/error-codes"
   >
-    Display images and other media.
+    Understand error responses and status codes
+  </Card>
+</CardGroup>
+
+## Why Choose Digitzs?
+
+<AccordionGroup>
+  <Accordion title="No Abandonment" icon="user-check">
+    Account creation, payment processing, and transaction reporting all happen inside your app. Better user experience leads to higher conversions.
+  </Accordion>
+
+  <Accordion title="No Waiting" icon="clock">
+    Accounts are created in real-time and merchants can accept payments immediately. No more waiting around for approvals.
+  </Accordion>
+
+  <Accordion title="No Receivables" icon="split">
+    Automatically split the proceeds from any sale to collect your platform or marketplace fees. No more invoicing. Get your piece of the pie today.
+  </Accordion>
+
+  <Accordion title="No Nonsense" icon="handshake">
+    Merchants pay a flat rate of 2.9% + 30¢ per transaction. No surprise fees. No gimmicks. Predictable costs make life easier.
+  </Accordion>
+
+  <Accordion title="Instant Funding" icon="bolt">
+    Merchants can get funds instantly when a customer pays with a qualified debit card. Restrictions apply. Reserves required.
+  </Accordion>
+
+  <Accordion title="Lifetime Revenue" icon="chart-line">
+    Payments are now a profit center. Earn income every time a transaction is processed. Making money while you sleep is always nice.
+  </Accordion>
+</AccordionGroup>
+
+## Key Features
+
+<CardGroup cols={3}>
+  <Card title="Real-Time Accounts" icon="gauge-high">
+    Create merchant accounts instantly without manual approval processes
+  </Card>
+  <Card title="Secure Payments" icon="shield-check">
+    Process credit cards, debit cards, and ACH payments with bank-level security
+  </Card>
+  <Card title="Split Payments" icon="scissors">
+    Automatically distribute funds between merchants and your platform
+  </Card>
+  <Card title="Transaction Management" icon="list-check">
+    Track, refund, and manage all transactions through a unified API
+  </Card>
+  <Card title="Comprehensive Reporting" icon="chart-mixed">
+    Access detailed transaction reports and payment histories
+  </Card>
+  <Card title="Developer Friendly" icon="code-simple">
+    RESTful API with clear documentation and example code
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Get Your Credentials">
+    Contact Digitzs to receive your API key and application ID during onboarding
+  </Step>
+  <Step title="Authenticate">
+    Follow our [authentication guide](/authentication) to generate your API tokens
+  </Step>
+  <Step title="Create a Merchant">
+    Use the [Create Merchant endpoint](/api-reference/merchants/create-merchant) to set up your first merchant account
+  </Step>
+  <Step title="Process a Payment">
+    Start accepting payments using our [payment endpoints](/api-reference/payments/overview)
+  </Step>
+</Steps>
+
+## API Overview
+
+The Digitzs API is organized around REST principles with three main resource categories:
+
+<CardGroup cols={3}>
+  <Card
+    title="Authorization"
+    icon="lock"
+    href="/api-reference/authorization/overview"
+  >
+    Generate API keys and tokens for secure access
   </Card>
   <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
+    title="Payments"
+    icon="credit-card"
+    href="/api-reference/payments/overview"
   >
-    Write once and reuse across your docs.
+    Process payments, refunds, and retrieve transaction data
   </Card>
-</Columns>
+  <Card
+    title="Merchants"
+    icon="store"
+    href="/api-reference/merchants/overview"
+  >
+    Manage merchant accounts and settings
+  </Card>
+</CardGroup>
 
-## Need inspiration?
+## Additional Resources
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<CardGroup cols={2}>
+  <Card
+    title="API User Manual"
+    icon="book"
+    href="https://digitzs.com/wp-content/uploads/2019/04/API-User-Manual.pdf"
+  >
+    Download the complete API user manual
+  </Card>
+  <Card
+    title="Quick Start Guide"
+    icon="file-pdf"
+    href="https://digitzs.com/wp-content/uploads/2019/07/Digitzs-Quick-Start-Guide.pdf"
+  >
+    Download the quick start guide PDF
+  </Card>
+</CardGroup>
+
+<Info>
+  **Need Help?** Our support team is here to assist you with integration questions and technical issues.
+</Info>

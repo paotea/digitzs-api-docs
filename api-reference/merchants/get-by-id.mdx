@@ -1,0 +1,179 @@
+---
+title: "Get Merchant by ID"
+api: "GET /merchants/{id}"
+description: "Retrieve detailed information about a specific merchant account"
+---
+
+## Endpoint
+
+```
+GET https://api.digitzs.com/merchants/{id}
+```
+
+## Overview
+
+Use this endpoint to retrieve complete details of a merchant account, including personal information, business details, and bank account information.
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The merchant account ID
+</ParamField>
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/merchants/merchant_abc123"
+  },
+  "data": {
+    "type": "merchants",
+    "id": "merchant_abc123",
+    "attributes": {
+      "AVS": "Standard",
+      "accountType": "business",
+      "accountName": "Acme Corporation",
+      "status": "active",
+      "createdAt": "2024-01-15T10:00:00Z",
+      "personalInfo": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@example.com",
+        "dayPhone": "4155551234"
+      },
+      "businessInfo": {
+        "businessName": "Acme Corporation",
+        "ein": "***4321",
+        "email": "info@acme.com",
+        "url": "https://acme.com"
+      },
+      "bankInfo": {
+        "bankName": "Bank of America",
+        "accountType": "checking",
+        "last4": "7890"
+      }
+    }
+  }
+}
+```
+
+<Note>
+  **Sensitive Data Masked:** SSN, EIN, and full account numbers are masked in responses for security.
+</Note>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://api.digitzs.com/merchants/merchant_abc123 \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id"
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function getMerchant(merchantId) {
+  const response = await axios.get(
+    `https://api.digitzs.com/merchants/${merchantId}`,
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id'
+      }
+    }
+  );
+
+  console.log('Merchant:', response.data.data.attributes.accountName);
+  return response.data;
+}
+```
+
+```python Python
+import requests
+
+def get_merchant(merchant_id):
+    url = f"https://api.digitzs.com/merchants/{merchant_id}"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id"
+    }
+
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+```
+
+```php PHP
+<?php
+function getMerchant($merchantId) {
+    $url = "https://api.digitzs.com/merchants/" . $merchantId;
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    return json_decode(curl_exec($ch), true);
+}
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+def get_merchant(merchant_id)
+  uri = URI("https://api.digitzs.com/merchants/#{merchant_id}")
+  request = Net::HTTP::Get.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  JSON.parse(response.body)
+end
+```
+
+</CodeGroup>
+
+## Merchant Status Values
+
+| Status | Description |
+|--------|-------------|
+| `active` | Merchant can process payments |
+| `pending` | Merchant account under review |
+| `suspended` | Account temporarily suspended |
+| `closed` | Account permanently closed |
+
+## Next Steps
+
+<Card
+  title="List Merchants"
+  icon="list"
+  href="/api-reference/merchants/list"
+>
+  View all merchant accounts
+</Card>

@@ -1,0 +1,573 @@
+---
+title: "Create ACH Payment"
+api: "POST /payments"
+description: "Process an ACH (Automated Clearing House) bank transfer payment"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/payments
+```
+
+## Overview
+
+Use this endpoint to process ACH payments directly from a customer's bank account. This method does not require creating a customer account or storing payment method tokens.
+
+<Note>
+  ACH payments typically take 3-5 business days to settle. Funds are not immediately available.
+</Note>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key from onboarding | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data" type="object" required>
+  Container for API data
+</ParamField>
+
+<ParamField body="data.requestId" type="string">
+  UUID for idempotency. If provided, must be in valid UUID format. Optional but recommended for preventing duplicate transactions.
+</ParamField>
+
+<ParamField body="data.type" type="string" required>
+  Must be `"payments"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Container for payment attributes
+</ParamField>
+
+<ParamField body="data.attributes.paymentType" type="string" required>
+  Must be `"ACH"` for ACH payments
+</ParamField>
+
+<ParamField body="data.attributes.merchantId" type="string" required>
+  The merchant account identifier
+</ParamField>
+
+<ParamField body="data.attributes.miscData" type="string">
+  Optional JSON string containing additional metadata like email, IP addresses, or custom data
+</ParamField>
+
+<ParamField body="data.attributes.StandardEntryClassCode" type="string" required>
+  Must be `"WEB"` for internet-initiated ACH transactions
+</ParamField>
+
+<ParamField body="data.attributes.bank" type="object" required>
+  Bank account information
+
+  <Expandable title="Bank object properties">
+    <ParamField body="data.attributes.bank.bankName" type="string" required>
+      Name of the financial institution
+    </ParamField>
+
+    <ParamField body="data.attributes.bank.accountType" type="string" required>
+      Type of account - must be `"checking"` or `"savings"`
+    </ParamField>
+
+    <ParamField body="data.attributes.bank.accountName" type="string" required>
+      Full name of the account holder
+    </ParamField>
+
+    <ParamField body="data.attributes.bank.accountNumber" type="string" required>
+      Bank account number
+    </ParamField>
+
+    <ParamField body="data.attributes.bank.routingNumber" type="string" required>
+      9-digit bank routing number. Must be a valid routing number even in test environment.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.transaction" type="object" required>
+  Transaction details
+
+  <Expandable title="Transaction object properties">
+    <ParamField body="data.attributes.transaction.amount" type="string" required>
+      Payment amount in cents (e.g., "3635" for $36.35)
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.currency" type="string" required>
+      Three-letter currency code (ISO 4217). Currently only `"USD"` is supported.
+    </ParamField>
+
+    <ParamField body="data.attributes.transaction.invoice" type="string" required>
+      Invoice or reference number for the transaction
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "requestId": "f8d0fedd-fad0-4c53-bb8d-44a4cd28573b",
+    "type": "payments",
+    "attributes": {
+      "paymentType": "ACH",
+      "merchantId": "merchant_123456",
+      "miscData": "{\"email\":\"customer@example.com\",\"originIp\":\"192.168.1.1\",\"customerIp\":\"203.0.113.0\"}",
+      "StandardEntryClassCode": "WEB",
+      "bank": {
+        "bankName": "Wells Fargo",
+        "accountType": "checking",
+        "accountName": "John Doe",
+        "accountNumber": "1234567890",
+        "routingNumber": "026009593"
+      },
+      "transaction": {
+        "amount": "3635",
+        "currency": "USD",
+        "invoice": "INV-2024-001"
+      }
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+<ResponseField name="links" type="object">
+  Contains URLs related to the resource
+
+  <Expandable title="properties">
+    <ResponseField name="links.self" type="string">
+      URL of the current endpoint
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Container for response data
+
+  <Expandable title="properties">
+    <ResponseField name="data.type" type="string">
+      Resource type - will be `"payments"`
+    </ResponseField>
+
+    <ResponseField name="data.id" type="string">
+      Unique payment transaction identifier
+    </ResponseField>
+
+    <ResponseField name="data.attributes" type="object">
+      <Expandable title="properties">
+        <ResponseField name="data.attributes.paymentType" type="string">
+          Payment type - `"ACH"`
+        </ResponseField>
+
+        <ResponseField name="data.attributes.transaction" type="object">
+          <Expandable title="Transaction details">
+            <ResponseField name="data.attributes.transaction.code" type="string">
+              Response code - `"0"` indicates success
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.message" type="string">
+              Human-readable response message
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.amount" type="string">
+              Transaction amount in cents
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.currency" type="string">
+              Currency code
+            </ResponseField>
+
+            <ResponseField name="data.attributes.transaction.invoice" type="string">
+              Invoice reference number
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_ach_abc123xyz",
+    "attributes": {
+      "paymentType": "ACH",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "3635",
+        "currency": "USD",
+        "invoice": "INV-2024-001"
+      }
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/payments \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "payments",
+      "attributes": {
+        "paymentType": "ACH",
+        "merchantId": "merchant_123456",
+        "StandardEntryClassCode": "WEB",
+        "bank": {
+          "bankName": "Wells Fargo",
+          "accountType": "checking",
+          "accountName": "John Doe",
+          "accountNumber": "1234567890",
+          "routingNumber": "026009593"
+        },
+        "transaction": {
+          "amount": "3635",
+          "currency": "USD",
+          "invoice": "INV-2024-001"
+        }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function createACHPayment() {
+  const response = await axios.post(
+    'https://api.digitzs.com/payments',
+    {
+      data: {
+        type: 'payments',
+        attributes: {
+          paymentType: 'ACH',
+          merchantId: 'merchant_123456',
+          StandardEntryClassCode: 'WEB',
+          bank: {
+            bankName: 'Wells Fargo',
+            accountType: 'checking',
+            accountName: 'John Doe',
+            accountNumber: '1234567890',
+            routingNumber: '026009593'
+          },
+          transaction: {
+            amount: '3635',
+            currency: 'USD',
+            invoice: 'INV-2024-001'
+          }
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  console.log('Payment ID:', response.data.data.id);
+  return response.data;
+}
+
+createACHPayment();
+```
+
+```python Python
+import requests
+
+def create_ach_payment():
+    url = "https://api.digitzs.com/payments"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "payments",
+            "attributes": {
+                "paymentType": "ACH",
+                "merchantId": "merchant_123456",
+                "StandardEntryClassCode": "WEB",
+                "bank": {
+                    "bankName": "Wells Fargo",
+                    "accountType": "checking",
+                    "accountName": "John Doe",
+                    "accountNumber": "1234567890",
+                    "routingNumber": "026009593"
+                },
+                "transaction": {
+                    "amount": "3635",
+                    "currency": "USD",
+                    "invoice": "INV-2024-001"
+                }
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    payment_id = response.json()["data"]["id"]
+    print(f"Payment ID: {payment_id}")
+    return response.json()
+
+create_ach_payment()
+```
+
+```php PHP
+<?php
+
+function createACHPayment() {
+    $url = "https://api.digitzs.com/payments";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "payments",
+            "attributes" => [
+                "paymentType" => "ACH",
+                "merchantId" => "merchant_123456",
+                "StandardEntryClassCode" => "WEB",
+                "bank" => [
+                    "bankName" => "Wells Fargo",
+                    "accountType" => "checking",
+                    "accountName" => "John Doe",
+                    "accountNumber" => "1234567890",
+                    "routingNumber" => "026009593"
+                ],
+                "transaction" => [
+                    "amount" => "3635",
+                    "currency" => "USD",
+                    "invoice" => "INV-2024-001"
+                ]
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 201) {
+        $data = json_decode($response, true);
+        $paymentId = $data["data"]["id"];
+        echo "Payment ID: " . $paymentId . "\n";
+        return $data;
+    } else {
+        throw new Exception("Error creating payment: " . $response);
+    }
+}
+
+createACHPayment();
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_ach_payment
+  uri = URI('https://api.digitzs.com/payments')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'payments',
+      attributes: {
+        paymentType: 'ACH',
+        merchantId: 'merchant_123456',
+        StandardEntryClassCode: 'WEB',
+        bank: {
+          bankName: 'Wells Fargo',
+          accountType: 'checking',
+          accountName: 'John Doe',
+          accountNumber: '1234567890',
+          routingNumber: '026009593'
+        },
+        transaction: {
+          amount: '3635',
+          currency: 'USD',
+          invoice: 'INV-2024-001'
+        }
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  if response.code == '201'
+    data = JSON.parse(response.body)
+    payment_id = data['data']['id']
+    puts "Payment ID: #{payment_id}"
+    data
+  else
+    raise "Error creating payment: #{response.body}"
+  end
+end
+
+create_ach_payment
+```
+
+</CodeGroup>
+
+## Error Responses
+
+<ResponseExample>
+
+```json 400 Bad Request
+{
+  "errors": [
+    {
+      "status": "400",
+      "title": "Bad Request",
+      "detail": "Invalid routing number",
+      "source": {
+        "pointer": "/data/attributes/bank/routingNumber"
+      }
+    }
+  ]
+}
+```
+
+```json 401 Unauthorized
+{
+  "errors": [
+    {
+      "status": "401",
+      "title": "Unauthorized",
+      "detail": "Invalid or expired app token"
+    }
+  ]
+}
+```
+
+```json 422 Unprocessable Entity
+{
+  "errors": [
+    {
+      "status": "422",
+      "title": "Unprocessable Entity",
+      "detail": "Payment processing failed - insufficient funds"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Error Scenarios
+
+<AccordionGroup>
+  <Accordion title="Invalid routing number">
+    **Error:** 400 Bad Request
+
+    **Solution:** Verify the routing number is a valid 9-digit ABA routing number. The test environment requires real routing numbers.
+  </Accordion>
+
+  <Accordion title="Invalid account type">
+    **Error:** 400 Bad Request
+
+    **Solution:** Ensure accountType is either "checking" or "savings" (lowercase).
+  </Accordion>
+
+  <Accordion title="Missing required fields">
+    **Error:** 400 Bad Request
+
+    **Solution:** Verify all required fields are present: paymentType, merchantId, StandardEntryClassCode, bank object, and transaction object.
+  </Accordion>
+
+  <Accordion title="Payment processing failed">
+    **Error:** 422 Unprocessable Entity
+
+    **Solution:** The payment was rejected by the bank. Common reasons include insufficient funds, closed account, or invalid account information.
+  </Accordion>
+</AccordionGroup>
+
+## Important Notes
+
+<Warning>
+  **Real Routing Numbers Required:** Even in the test environment, you must use valid bank routing numbers. Invalid routing numbers will be rejected.
+</Warning>
+
+<Note>
+  **Settlement Time:** ACH payments take 3-5 business days to settle. The payment will appear as "pending" during this time.
+</Note>
+
+<Tip>
+  **Idempotency:** Use the optional `requestId` field with a UUID to prevent duplicate payments if your request is accidentally submitted multiple times.
+</Tip>
+
+## Best Practices
+
+1. **Validate Bank Information:** Verify routing and account numbers before submitting to reduce failed payments
+2. **Store Payment IDs:** Save the returned payment ID for status checking and reconciliation
+3. **Handle Async Nature:** ACH is asynchronous - implement webhooks or polling to track payment status
+4. **Collect Customer Consent:** Ensure you have proper authorization to debit the customer's account
+5. **Use miscData Field:** Store additional context like customer email, IP addresses for fraud prevention and customer support
+
+## Next Steps
+
+<Card
+  title="Get Payment Status"
+  icon="magnifying-glass"
+  href="/api-reference/payments/get-status"
+>
+  Check the status of your ACH payment
+</Card>
+
+<Card
+  title="Refund Payment"
+  icon="rotate-left"
+  href="/api-reference/payments/refund-void"
+>
+  Learn how to refund an ACH payment
+</Card>

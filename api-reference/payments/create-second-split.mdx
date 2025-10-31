@@ -1,0 +1,317 @@
+---
+title: "Create Second Split"
+api: "POST /payments"
+description: "Add an additional split to an existing transaction"
+---
+
+## Endpoint
+
+```
+POST https://api.digitzs.com/payments
+```
+
+## Overview
+
+Use this endpoint to perform a second split on an existing transaction. This allows you to distribute proceeds to a third merchant account after the original payment has been processed.
+
+<Warning>
+  This feature requires special configuration. Contact Digitzs support to enable second split functionality for your merchant accounts.
+</Warning>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key from onboarding | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+| `Content-Type` | `application/json` | Yes |
+
+## Request Body
+
+<ParamField body="data.type" type="string" required>
+  Must be `"payments"`
+</ParamField>
+
+<ParamField body="data.attributes" type="object" required>
+  Container for payment attributes
+</ParamField>
+
+<ParamField body="data.attributes.paymentType" type="string" required>
+  Must be `"secondSplit"`
+</ParamField>
+
+<ParamField body="data.attributes.parentPaymentId" type="string" required>
+  The payment ID of the original transaction to split from
+</ParamField>
+
+<ParamField body="data.attributes.split" type="object" required>
+  Split configuration
+
+  <Expandable title="Split properties">
+    <ParamField body="data.attributes.split.merchantId" type="string" required>
+      Merchant account to receive the second split amount
+    </ParamField>
+
+    <ParamField body="data.attributes.split.amount" type="string" required>
+      Amount to split in cents. Must be less than remaining available balance.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="data.attributes.miscData" type="string">
+  Optional JSON string with additional metadata
+</ParamField>
+
+### Example Request
+
+```json
+{
+  "data": {
+    "type": "payments",
+    "attributes": {
+      "paymentType": "secondSplit",
+      "parentPaymentId": "pay_abc123xyz",
+      "split": {
+        "merchantId": "merchant_third_789",
+        "amount": "50"
+      },
+      "miscData": "{\"reason\":\"referral_fee\"}"
+    }
+  }
+}
+```
+
+## Response
+
+### Success Response (201 Created)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_split2_xyz789",
+    "attributes": {
+      "paymentType": "secondSplit",
+      "parentPaymentId": "pay_abc123xyz",
+      "transaction": {
+        "code": "0",
+        "message": "Success",
+        "amount": "50",
+        "currency": "USD"
+      }
+    }
+  }
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.digitzs.com/payments \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "type": "payments",
+      "attributes": {
+        "paymentType": "secondSplit",
+        "parentPaymentId": "pay_abc123xyz",
+        "split": {
+          "merchantId": "merchant_third_789",
+          "amount": "50"
+        }
+      }
+    }
+  }'
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function createSecondSplit(parentPaymentId, merchantId, amount) {
+  const response = await axios.post(
+    'https://api.digitzs.com/payments',
+    {
+      data: {
+        type: 'payments',
+        attributes: {
+          paymentType: 'secondSplit',
+          parentPaymentId: parentPaymentId,
+          split: {
+            merchantId: merchantId,
+            amount: amount
+          }
+        }
+      }
+    },
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  console.log('Second Split ID:', response.data.data.id);
+  return response.data;
+}
+
+createSecondSplit('pay_abc123xyz', 'merchant_third_789', '50');
+```
+
+```python Python
+import requests
+
+def create_second_split(parent_payment_id, merchant_id, amount):
+    url = "https://api.digitzs.com/payments"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "data": {
+            "type": "payments",
+            "attributes": {
+                "paymentType": "secondSplit",
+                "parentPaymentId": parent_payment_id,
+                "split": {
+                    "merchantId": merchant_id,
+                    "amount": amount
+                }
+            }
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()
+
+create_second_split("pay_abc123xyz", "merchant_third_789", "50")
+```
+
+```php PHP
+<?php
+
+function createSecondSplit($parentPaymentId, $merchantId, $amount) {
+    $url = "https://api.digitzs.com/payments";
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id",
+        "Content-Type: application/json"
+    ];
+
+    $payload = json_encode([
+        "data" => [
+            "type" => "payments",
+            "attributes" => [
+                "paymentType" => "secondSplit",
+                "parentPaymentId" => $parentPaymentId,
+                "split" => [
+                    "merchantId" => $merchantId,
+                    "amount" => $amount
+                ]
+            ]
+        ]
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+createSecondSplit("pay_abc123xyz", "merchant_third_789", "50");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+require 'uri'
+
+def create_second_split(parent_payment_id, merchant_id, amount)
+  uri = URI('https://api.digitzs.com/payments')
+
+  request = Net::HTTP::Post.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+  request['Content-Type'] = 'application/json'
+
+  request.body = {
+    data: {
+      type: 'payments',
+      attributes: {
+        paymentType: 'secondSplit',
+        parentPaymentId: parent_payment_id,
+        split: {
+          merchantId: merchant_id,
+          amount: amount
+        }
+      }
+    }
+  }.to_json
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  JSON.parse(response.body)
+end
+
+create_second_split('pay_abc123xyz', 'merchant_third_789', '50')
+```
+
+</CodeGroup>
+
+## Important Notes
+
+<Warning>
+  **Configuration Required:** Second split functionality must be enabled for your merchant accounts. Contact Digitzs support before using this feature.
+</Warning>
+
+<Note>
+  **Available Balance:** The second split amount cannot exceed the available balance after the first split and processing fees.
+</Note>
+
+<Tip>
+  **Use Case:** This is useful for complex revenue sharing scenarios like referral fees, affiliate commissions, or multi-party marketplaces.
+</Tip>
+
+## Best Practices
+
+1. **Verify Parent Payment:** Ensure the parent payment has settled before creating a second split
+2. **Track All Splits:** Maintain records of all split transactions for reconciliation
+3. **Validate Amount:** Check that sufficient funds remain for the second split
+4. **Clear Documentation:** Document the reason for each split in the miscData field
+
+## Next Steps
+
+<Card
+  title="Get Payment Details"
+  icon="magnifying-glass"
+  href="/api-reference/payments/get-by-id"
+>
+  View complete payment details including all splits
+</Card>

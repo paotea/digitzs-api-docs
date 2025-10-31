@@ -1,0 +1,278 @@
+---
+title: "Get Payment Status"
+api: "GET /payments/status/{id}"
+description: "Retrieve the current status of a payment transaction"
+---
+
+## Endpoint
+
+```
+GET https://api.digitzs.com/payments/status/{id}
+```
+
+## Overview
+
+Use this lightweight endpoint to quickly check the status of a payment transaction without retrieving all transaction details.
+
+<Tip>
+  This endpoint returns less data than GET /payments/{id}, making it ideal for status polling or when you only need to know if a payment succeeded.
+</Tip>
+
+## Authentication
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `x-api-key` | Your API key | Yes |
+| `Authorization` | `Bearer {appToken}` | Yes |
+| `appId` | Your application ID | Yes |
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique payment transaction ID
+</ParamField>
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "links": {
+    "self": "https://api.digitzs.com/payments/status/pay_abc123xyz"
+  },
+  "data": {
+    "type": "payments",
+    "id": "pay_abc123xyz",
+    "attributes": {
+      "status": "completed",
+      "paymentType": "card",
+      "amount": "2500",
+      "currency": "USD",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:05Z"
+    }
+  }
+}
+```
+
+<ResponseField name="data.attributes.status" type="string">
+  Current payment status: `pending`, `completed`, `failed`, `refunded`, `voided`, or `partial_refund`
+</ResponseField>
+
+<ResponseField name="data.attributes.amount" type="string">
+  Transaction amount in cents
+</ResponseField>
+
+<ResponseField name="data.attributes.createdAt" type="string">
+  ISO 8601 timestamp of payment creation
+</ResponseField>
+
+<ResponseField name="data.attributes.updatedAt" type="string">
+  ISO 8601 timestamp of last status update
+</ResponseField>
+
+## Code Examples
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET https://api.digitzs.com/payments/status/pay_abc123xyz \
+  -H "x-api-key: your-api-key" \
+  -H "Authorization: Bearer your-app-token" \
+  -H "appId: your-app-id"
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function getPaymentStatus(paymentId) {
+  const response = await axios.get(
+    `https://api.digitzs.com/payments/status/${paymentId}`,
+    {
+      headers: {
+        'x-api-key': 'your-api-key',
+        'Authorization': 'Bearer your-app-token',
+        'appId': 'your-app-id'
+      }
+    }
+  );
+
+  const status = response.data.data.attributes.status;
+  console.log(`Payment ${paymentId} status:`, status);
+  return status;
+}
+
+getPaymentStatus('pay_abc123xyz');
+```
+
+```python Python
+import requests
+
+def get_payment_status(payment_id):
+    url = f"https://api.digitzs.com/payments/status/{payment_id}"
+
+    headers = {
+        "x-api-key": "your-api-key",
+        "Authorization": "Bearer your-app-token",
+        "appId": "your-app-id"
+    }
+
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+
+    status = response.json()["data"]["attributes"]["status"]
+    print(f"Payment {payment_id} status: {status}")
+    return status
+
+get_payment_status("pay_abc123xyz")
+```
+
+```php PHP
+<?php
+
+function getPaymentStatus($paymentId) {
+    $url = "https://api.digitzs.com/payments/status/" . $paymentId;
+
+    $headers = [
+        "x-api-key: your-api-key",
+        "Authorization: Bearer your-app-token",
+        "appId: your-app-id"
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+    $status = $data["data"]["attributes"]["status"];
+    echo "Payment status: $status\n";
+    return $status;
+}
+
+getPaymentStatus("pay_abc123xyz");
+?>
+```
+
+```ruby Ruby
+require 'net/http'
+require 'json'
+
+def get_payment_status(payment_id)
+  uri = URI("https://api.digitzs.com/payments/status/#{payment_id}")
+  request = Net::HTTP::Get.new(uri)
+  request['x-api-key'] = 'your-api-key'
+  request['Authorization'] = 'Bearer your-app-token'
+  request['appId'] = 'your-app-id'
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    http.request(request)
+  end
+
+  data = JSON.parse(response.body)
+  status = data['data']['attributes']['status']
+  puts "Payment status: #{status}"
+  status
+end
+
+get_payment_status('pay_abc123xyz')
+```
+
+</CodeGroup>
+
+## Status Values
+
+| Status | Description | Next Actions |
+|--------|-------------|--------------|
+| `pending` | Payment processing (typical for ACH) | Wait for settlement |
+| `completed` | Successfully processed | No action needed |
+| `failed` | Payment failed or declined | Review error, retry with different payment method |
+| `refunded` | Fully refunded | No further refunds possible |
+| `voided` | Transaction cancelled same-day | No action needed |
+| `partial_refund` | Partially refunded | Additional refunds possible up to remaining amount |
+
+## Polling Best Practices
+
+<AccordionGroup>
+  <Accordion title="ACH Payment Polling">
+    **Frequency:** Check every 30-60 minutes during business hours
+
+    **Duration:** ACH payments take 3-5 business days to settle
+
+    **Better Alternative:** Implement webhooks for real-time status updates
+  </Accordion>
+
+  <Accordion title="Card Payment Status">
+    **Frequency:** Check once immediately after creation, then hourly if needed
+
+    **Duration:** Card payments typically complete within seconds
+
+    **Timeout:** If pending after 5 minutes, likely an issue - investigate
+  </Accordion>
+
+  <Accordion title="Exponential Backoff">
+    For repeated status checks:
+
+    1. First check: Immediate
+    2. Second check: 30 seconds
+    3. Third check: 1 minute
+    4. Fourth check: 2 minutes
+    5. Continue doubling up to maximum interval
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<ResponseExample>
+
+```json 404 Not Found
+{
+  "errors": [
+    {
+      "status": "404",
+      "title": "Not Found",
+      "detail": "Payment not found"
+    }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Common Use Cases
+
+1. **Status Polling:** Regularly check ACH payment status until settled
+2. **Payment Confirmation:** Verify payment completed before fulfilling orders
+3. **Dashboard Updates:** Display real-time payment status in admin interfaces
+4. **Webhook Verification:** Confirm status received via webhook matches current state
+
+## Performance Considerations
+
+<Note>
+  **Lighter Payload:** This endpoint returns significantly less data than GET /payments/{id}, making it faster and more efficient for status checks.
+</Note>
+
+<Warning>
+  **Rate Limiting:** Avoid excessive polling. Implement reasonable intervals or use webhooks instead.
+</Warning>
+
+## Next Steps
+
+<Card
+  title="Get Full Payment Details"
+  icon="file-invoice-dollar"
+  href="/api-reference/payments/get-by-id"
+>
+  Retrieve complete payment information including fees and splits
+</Card>
+
+<Card
+  title="List Payments"
+  icon="list"
+  href="/api-reference/payments/list"
+>
+  View all payments for a merchant
+</Card>
