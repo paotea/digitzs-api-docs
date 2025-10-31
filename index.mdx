@@ -1,158 +1,77 @@
 ---
-title: "Digitzs API Documentation"
-description: "Build merchant services into your app with a quick, painless, and secure API"
+title: "Digitzs API"
+description: "A quick, painless, secure, profitable way to build merchant services into your app"
 ---
 
-## Welcome to Digitzs API
+The Digitzs API provides a quick, painless, secure, profitable way to build merchant services into your app. Click [here](https://digitzs.com/wp-content/uploads/2019/04/API-User-Manual.pdf) to learn more about the Digitzs API, and [here](https://digitzs.com/wp-content/uploads/2019/07/Digitzs-Quick-Start-Guide.pdf) for the Digitzs Quick Start Guide.
 
-The Digitzs API provides a comprehensive solution for integrating merchant services directly into your application. Enable your users to open merchant accounts in real-time and start processing transactions immediately—all without leaving your platform.
+## Merchant Services
 
-<CardGroup cols={2}>
-  <Card
-    title="Quick Start"
-    icon="rocket"
-    href="/quickstart"
-  >
-    Get started with the Digitzs API in minutes
-  </Card>
-  <Card
-    title="Authentication"
-    icon="key"
-    href="/authentication"
-  >
-    Learn how to authenticate your API requests
-  </Card>
-  <Card
-    title="API Reference"
-    icon="code"
-    href="/api-reference/overview"
-  >
-    Explore all available endpoints and methods
-  </Card>
-  <Card
-    title="Error Codes"
-    icon="triangle-exclamation"
-    href="/error-codes"
-  >
-    Understand error responses and status codes
-  </Card>
-</CardGroup>
+Your users can open a merchant account in real time—without ever leaving your site—and process transactions immediately. You earn revenue on every sale.
 
-## Why Choose Digitzs?
+**No Abandonment**
+Account creation, payment processing, and transaction reporting all happen inside your app. Better UX = Higher Conversions
 
-<AccordionGroup>
-  <Accordion title="No Abandonment" icon="user-check">
-    Account creation, payment processing, and transaction reporting all happen inside your app. Better user experience leads to higher conversions.
-  </Accordion>
+**No Waiting**
+Accounts are created in real-time and merchants can accept payments immediately. No more waiting around for approvals.
 
-  <Accordion title="No Waiting" icon="clock">
-    Accounts are created in real-time and merchants can accept payments immediately. No more waiting around for approvals.
-  </Accordion>
+**No Receivables**
+Automatically split the proceeds from any sale to collect your platform or marketplace fees. No more invoicing. Get your piece of the pie today.
 
-  <Accordion title="No Receivables" icon="split">
-    Automatically split the proceeds from any sale to collect your platform or marketplace fees. No more invoicing. Get your piece of the pie today.
-  </Accordion>
+**No Nonsense**
+Merchants pay a flat rate of 2.9% + 30¢ per transaction. No surprise fees. No gimmicks. Predictable costs make life easier.
 
-  <Accordion title="No Nonsense" icon="handshake">
-    Merchants pay a flat rate of 2.9% + 30¢ per transaction. No surprise fees. No gimmicks. Predictable costs make life easier.
-  </Accordion>
+**Instant Funding**
+Merchants can get funds instantly when a customer pays with a qualified debit card. Restrictions apply. Reserves required.
 
-  <Accordion title="Instant Funding" icon="bolt">
-    Merchants can get funds instantly when a customer pays with a qualified debit card. Restrictions apply. Reserves required.
-  </Accordion>
+**Lifetime revenue**
+Payments are now a profit center. Earn income every time a transaction is processed. Making money while you sleep is always nice.
 
-  <Accordion title="Lifetime Revenue" icon="chart-line">
-    Payments are now a profit center. Earn income every time a transaction is processed. Making money while you sleep is always nice.
-  </Accordion>
-</AccordionGroup>
+## Headers
 
-## Key Features
+As a part of authentication into the Digitzs API, there are different headers that are required to successfully call functions. They are as listed below.
 
-<CardGroup cols={3}>
-  <Card title="Real-Time Accounts" icon="gauge-high">
-    Create merchant accounts instantly without manual approval processes
-  </Card>
-  <Card title="Secure Payments" icon="shield-check">
-    Process credit cards, debit cards, and ACH payments with bank-level security
-  </Card>
-  <Card title="Split Payments" icon="scissors">
-    Automatically distribute funds between merchants and your platform
-  </Card>
-  <Card title="Transaction Management" icon="list-check">
-    Track, refund, and manage all transactions through a unified API
-  </Card>
-  <Card title="Comprehensive Reporting" icon="chart-mixed">
-    Access detailed transaction reports and payment histories
-  </Card>
-  <Card title="Developer Friendly" icon="code-simple">
-    RESTful API with clear documentation and example code
-  </Card>
-</CardGroup>
+**x-api-key**
+This is your API Key, provided during on-boarding
 
-## Getting Started
+**Authorization**
+This is your app token, generated by calling /auth/token (as described below). This token expires every hour.
+**NOTE:** the value needs `Bearer` prepended to your app token. This is with a capital "B" and a space between Bearer and your token.
 
-<Steps>
-  <Step title="Get Your Credentials">
-    Contact Digitzs to receive your API key and application ID during onboarding
-  </Step>
-  <Step title="Authenticate">
-    Follow our [authentication guide](/authentication) to generate your API tokens
-  </Step>
-  <Step title="Create a Merchant">
-    Use the [Create Merchant endpoint](/api-reference/merchants/create-merchant) to set up your first merchant account
-  </Step>
-  <Step title="Process a Payment">
-    Start accepting payments using our [payment endpoints](/api-reference/payments/overview)
-  </Step>
-</Steps>
+**appId**
+This is your application ID, provided during on-boarding.
 
-## API Overview
+## Errors
 
-The Digitzs API is organized around REST principles with three main resource categories:
+Status codes are issued by a server in response to a client's request made to the server. They include codes from [Internet Engineering Task Force](https://www.ietf.org/) (IETF) Request for Comments (RFCs), other specifications, and some additional codes used in some common applications of the Hypertext Transfer Protocol (HTTP).
 
-<CardGroup cols={3}>
-  <Card
-    title="Authorization"
-    icon="lock"
-    href="/api-reference/authorization/overview"
-  >
-    Generate API keys and tokens for secure access
-  </Card>
-  <Card
-    title="Payments"
-    icon="credit-card"
-    href="/api-reference/payments/overview"
-  >
-    Process payments, refunds, and retrieve transaction data
-  </Card>
-  <Card
-    title="Merchants"
-    icon="store"
-    href="/api-reference/merchants/overview"
-  >
-    Manage merchant accounts and settings
-  </Card>
-</CardGroup>
+There are five status code categories. The first digit of the status code defines the class of response. The last two digits do not have any class or categorization role.
 
-## Additional Resources
+1 – Informational. The request was received, continuing process.
 
-<CardGroup cols={2}>
-  <Card
-    title="API User Manual"
-    icon="book"
-    href="https://digitzs.com/wp-content/uploads/2019/04/API-User-Manual.pdf"
-  >
-    Download the complete API user manual
-  </Card>
-  <Card
-    title="Quick Start Guide"
-    icon="file-pdf"
-    href="https://digitzs.com/wp-content/uploads/2019/07/Digitzs-Quick-Start-Guide.pdf"
-  >
-    Download the quick start guide PDF
-  </Card>
-</CardGroup>
+2 – Successful. The request was successfully received, understood, and accepted.
 
-<Info>
-  **Need Help?** Our support team is here to assist you with integration questions and technical issues.
-</Info>
+3 – Redirection. There is further action necessary in order to complete the request.
+
+4 – Client Error. The request contains bad syntax or cannot be fulfilled.
+
+5 – Server Error. The server failed to fulfill an apparently valid request.
+
+Click [here](https://digitzs.com/wp-content/uploads/2019/04/API-User-Manual.pdf) to learn more about the Digitzs API.
+
+| HTTP Error Codes | Meaning |
+| --- | --- |
+| 200 - OK | The request was successful. |
+| 400 - Bad Request | The requested item does not exist. |
+| 401 - Unauthorized | An authorization header is required. |
+| 402 - Payment Required | Reserved for future use. |
+| 403 - Forbidden | The account is not authorized. |
+| 404 - Not Found | The resource cannot be found. |
+| 408 - Request Timeout | The server timed out. |
+| 409 - Conflict | Three is an editing conflict. |
+| 429 - Too Many Requests | The user has sent too many requests. |
+| 500 - Internal Server Error | There was an unexpected error. |
+| 501 - Not Implemented | The request method not recognized. |
+| 502 - Bad Gateway | The response is invalid. |
+| 503 - Service Unavailable | The server is currently unavailable. |
+| 504 - Gateway Timeout | A timely response was not received. |
